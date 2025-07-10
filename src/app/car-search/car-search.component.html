@@ -1,0 +1,307 @@
+<div class="car-search-page">
+    <!-- Enhanced Header -->
+    <header class="search-header">
+        <div class="container">
+            <div class="header-content">
+                <div class="header-left">
+                    <div class="breadcrumb">
+                        <a routerLink="/" class="breadcrumb-link">Home</a>
+                        <span class="breadcrumb-separator">/</span>
+                        <span class="breadcrumb-current">Browse Cars</span>
+                    </div>
+                    <h1 class="page-title">Find Your Perfect Car</h1>
+                    <p class="page-subtitle">Discover premium vehicles from verified owners across Nigeria</p>
+                </div>
+                <div class="header-right">
+                    <div class="header-actions">
+                        <button class="btn btn-outline btn-sm" (click)="toggleFilters()">
+                            <span class="material-icons">tune</span>
+                            Filters
+                            <span class="filter-count" *ngIf="hasActiveFilters()">{{ getActiveFilterCount() }}</span>
+                        </button>
+                        <button class="btn btn-secondary btn-sm">
+                            <span class="material-icons">map</span>
+                            Map View
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="search-container">
+        <div class="container">
+            <div class="search-layout">
+                <!-- Enhanced Filters Sidebar -->
+                <aside class="filters-sidebar" [class.show-filters]="showFilters">
+                    <div class="filters-header">
+                        <div class="filters-title">
+                            <span class="material-icons">filter_alt</span>
+                            <h3>Refine Search</h3>
+                        </div>
+                        <button class="close-filters" (click)="toggleFilters()">
+                            <span class="material-icons">close</span>
+                        </button>
+                    </div>
+
+                    <div class="filters-content">
+                        <!-- Quick Filters -->
+                        <div class="filter-section">
+                            <label class="filter-label">Quick Filters</label>
+                            <div class="quick-filters">
+                                <button class="quick-filter-btn" [class.active]="filters.carType === 'Luxury'">
+                                    <span class="material-icons">star</span>
+                                    Luxury
+                                </button>
+                                <button class="quick-filter-btn" [class.active]="filters.carType === 'SUV'">
+                                    <span class="material-icons">terrain</span>
+                                    SUV
+                                </button>
+                                <button class="quick-filter-btn" [class.active]="filters.priceRange.max <= 20000">
+                                    <span class="material-icons">savings</span>
+                                    Budget
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <label class="filter-label">
+                                <span class="material-icons">location_on</span>
+                                Location
+                            </label>
+                            <div class="select-wrapper">
+                                <select class="filter-select" [(ngModel)]="filters.location"
+                                    (change)="onFilterChange()">
+                                    <option value="">All Locations</option>
+                                    <option *ngFor="let location of locations" [value]="location">
+                                        {{ location }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <label class="filter-label">
+                                <span class="material-icons">directions_car</span>
+                                Vehicle Type
+                            </label>
+                            <div class="select-wrapper">
+                                <select class="filter-select" [(ngModel)]="filters.carType" (change)="onFilterChange()">
+                                    <option value="all">All Types</option>
+                                    <option *ngFor="let type of carTypes" [value]="type">
+                                        {{ type }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <label class="filter-label">
+                                <span class="material-icons">payments</span>
+                                Price Range
+                            </label>
+                            <div class="price-range-container">
+                                <div class="price-inputs">
+                                    <div class="input-group">
+                                        <span class="input-prefix">₦</span>
+                                        <input type="number" class="price-input" placeholder="Min"
+                                            [(ngModel)]="filters.priceRange.min" (change)="onFilterChange()">
+                                    </div>
+                                    <span class="price-separator">to</span>
+                                    <div class="input-group">
+                                        <span class="input-prefix">₦</span>
+                                        <input type="number" class="price-input" placeholder="Max"
+                                            [(ngModel)]="filters.priceRange.max" (change)="onFilterChange()">
+                                    </div>
+                                </div>
+                                <div class="price-suggestions">
+                                    <button class="price-suggestion" (click)="setPriceRange(0, 15000)">Under
+                                        ₦15k</button>
+                                    <button class="price-suggestion" (click)="setPriceRange(15000, 30000)">₦15k -
+                                        ₦30k</button>
+                                    <button class="price-suggestion"
+                                        (click)="setPriceRange(30000, 50000)">₦30k+</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="filter-section">
+                            <label class="filter-label">
+                                <span class="material-icons">event</span>
+                                Rental Period
+                            </label>
+                            <div class="date-inputs">
+                                <div class="date-group">
+                                    <label class="date-label">Pick-up</label>
+                                    <input type="date" class="filter-input date-input" [(ngModel)]="filters.startDate">
+                                </div>
+                                <div class="date-group">
+                                    <label class="date-label">Return</label>
+                                    <input type="date" class="filter-input date-input" [(ngModel)]="filters.endDate">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="filter-actions">
+                        <button class="btn btn-primary btn-full" (click)="onFilterChange()">
+                            <span class="material-icons">search</span>
+                            Apply Filters
+                        </button>
+                        <button class="btn btn-text btn-full" (click)="clearFilters()">
+                            Clear All Filters
+                        </button>
+                    </div>
+                </aside>
+
+                <!-- Enhanced Main Content -->
+                <main class="search-main">
+                    <!-- Enhanced Results Header -->
+                    <div class="results-header">
+                        <div class="results-info">
+                            <h2 class="results-title">
+                                {{ filteredCars.length }} vehicle{{ filteredCars.length !== 1 ? 's' : '' }} available
+                            </h2>
+                            <div class="results-meta">
+                                <span class="results-subtitle" *ngIf="filters.location">
+                                    <span class="material-icons">location_on</span>
+                                    {{ filters.location }}
+                                </span>
+                                <span class="results-subtitle" *ngIf="filters.carType !== 'all'">
+                                    <span class="material-icons">directions_car</span>
+                                    {{ filters.carType }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="sort-controls">
+                            <div class="view-toggle">
+                                <button class="view-btn active">
+                                    <span class="material-icons">grid_view</span>
+                                </button>
+                                <button class="view-btn">
+                                    <span class="material-icons">view_list</span>
+                                </button>
+                            </div>
+                            <div class="sort-dropdown">
+                                <label class="sort-label">Sort:</label>
+                                <div class="select-wrapper">
+                                    <select class="sort-select" [(ngModel)]="filters.sortBy" (change)="onSortChange()">
+                                        <option *ngFor="let option of sortOptions" [value]="option.value">
+                                            {{ option.label }}
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Loading State -->
+                    <div class="loading-state" *ngIf="isLoading">
+                        <div class="loading-content">
+                            <div class="loading-spinner">
+                                <div class="spinner"></div>
+                            </div>
+                            <h3>Finding the best cars for you</h3>
+                            <p>Please wait while we search through our premium collection...</p>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Empty State -->
+                    <div class="empty-state" *ngIf="!isLoading && filteredCars.length === 0">
+                        <div class="empty-content">
+                            <div class="empty-icon">
+                                <span class="material-icons">search_off</span>
+                            </div>
+                            <h3>No vehicles match your criteria</h3>
+                            <p>Try adjusting your filters or expanding your search area to find more options.</p>
+                            <div class="empty-actions">
+                                <button class="btn btn-primary" (click)="clearFilters()">
+                                    <span class="material-icons">refresh</span>
+                                    Reset Filters
+                                </button>
+                                <button class="btn btn-outline">
+                                    <span class="material-icons">support_agent</span>
+                                    Get Help
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Car Grid -->
+                    <div class="car-grid" *ngIf="!isLoading && filteredCars.length > 0">
+                        <div class="car-card" *ngFor="let car of filteredCars" (click)="onViewDetails(car.id)">
+                            <div class="car-image-container">
+                                <img [src]="car.imageUrl" [alt]="car.make + ' ' + car.model" class="car-image">
+                                <div class="car-badges">
+                                    <div class="car-badge verified" *ngIf="car.owner.verified">
+                                        <span class="material-icons">verified</span>
+                                        Verified
+                                    </div>
+                                    <div class="car-badge instant" *ngIf="car.isAvailable">
+                                        <span class="material-icons">flash_on</span>
+                                        Instant Book
+                                    </div>
+                                </div>
+                                <button class="favorite-btn">
+                                    <span class="material-icons">favorite_border</span>
+                                </button>
+                            </div>
+
+                            <div class="car-content">
+                                <div class="car-header">
+                                    <div class="car-title-group">
+                                        <h3 class="car-title">{{ car.make }} {{ car.model }}</h3>
+                                        <span class="car-year">{{ car.year }}</span>
+                                    </div>
+                                    <div class="car-type-badge">{{ car.type }}</div>
+                                </div>
+
+                                <div class="car-location">
+                                    <span class="material-icons">location_on</span>
+                                    {{ car.location }}
+                                </div>
+
+                                <div class="car-rating">
+                                    <div class="stars">
+                                        <span class="material-icons star" *ngFor="let star of getStarRating(car.rating)"
+                                            [class.filled]="star === 1">
+                                            {{ star === 1 ? 'star' : 'star_border' }}
+                                        </span>
+                                    </div>
+                                    <span class="rating-text">{{ car.rating }}</span>
+                                    <span class="review-count">({{ car.reviewCount }} reviews)</span>
+                                </div>
+
+                                <div class="car-features">
+                                    <span class="feature-tag" *ngFor="let feature of car.features.slice(0, 3)">
+                                        {{ feature }}
+                                    </span>
+                                </div>
+
+                                <div class="car-owner">
+                                    <span class="owner-label">Hosted by</span>
+                                    <span class="owner-name">{{ car.owner.name }}</span>
+                                    <span class="owner-rating">
+                                        <span class="material-icons">star</span>
+                                        {{ car.owner.rating }}
+                                    </span>
+                                </div>
+
+                                <div class="car-footer">
+                                    <div class="car-price">
+                                        <span class="price-amount">{{ formatPrice(car.pricePerDay) }}</span>
+                                        <span class="price-period">per day</span>
+                                    </div>
+                                    <button class="btn btn-primary btn-sm" (click)="onViewDetails(car.id)">
+                                        <span class="material-icons">visibility</span>
+                                        View Details
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+</div>

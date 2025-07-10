@@ -1,0 +1,178 @@
+<div class="landing-page">
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="hero-background">
+            <div class="hero-overlay"></div>
+        </div>
+        <div class="hero-content">
+            <div class="hero-text">
+                <div class="hero-header">
+                    <div class="app-brand">
+                        <h2 class="app-name">HireMyCar</h2>
+                        <p class="app-tagline">Nigeria's Premier Car Rental Platform</p>
+                    </div>
+                </div>
+
+                <div class="hero-main">
+                    <h1 class="hero-title">
+                        Professional Car Rental <span class="highlight">Made Simple</span>
+                    </h1>
+                    <p class="hero-subtitle">
+                        Connect with verified car owners across Nigeria. Experience seamless, secure, and affordable car
+                        rentals with our trusted peer-to-peer platform.
+                    </p>
+                </div>
+
+                <!-- Trust Indicators -->
+                <div class="trust-indicators">
+                    <div class="trust-item" *ngFor="let indicator of trustIndicators">
+                        <span class="trust-icon material-icons">{{ indicator.icon }}</span>
+                        <span class="trust-text">{{ indicator.text }}</span>
+                    </div>
+                </div>
+
+                <!-- CTA Buttons -->
+                <div class="cta-buttons">
+                    <a routerLink="/search" class="btn btn-primary">
+                        <span class="btn-icon material-icons">search</span>
+                        Browse Available Cars
+                    </a>
+                    <button class="btn btn-secondary" (click)="onListCarClick()">
+                        <span class="btn-icon material-icons">add_circle</span>
+                        Become a Host
+                    </button>
+                </div>
+            </div>
+
+            <div class="hero-visual">
+                <div class="hero-stats">
+                    <div class="stat-item">
+                        <div class="stat-number">10,000+</div>
+                        <div class="stat-label">Happy Customers</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">5,000+</div>
+                        <div class="stat-label">Available Cars</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-number">50+</div>
+                        <div class="stat-label">Cities Covered</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+        <div class="container">
+            <h2 class="section-title">Why Choose <span class="brand-highlight">HireMyCar</span>?</h2>
+            <div class="features-grid">
+                <div class="feature-card" *ngFor="let feature of features">
+                    <div class="feature-icon-box">
+                        <span class="material-icons feature-icon">{{ feature.icon }}</span>
+                    </div>
+                    <div class="feature-content">
+                        <h3 class="feature-title">{{ feature.title }}</h3>
+                        <p class="feature-description">{{ feature.description }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="how-it-works-section">
+        <div class="container">
+            <h2 class="section-title">How It Works</h2>
+            <div class="howit-flex">
+                <!-- For Renters -->
+                <div class="works-section">
+                    <h3 class="works-subtitle">For Renters</h3>
+                    <div class="steps-timeline">
+                        <div class="step-card" *ngFor="let step of renterSteps; let i = index">
+                            <div class="step-circle">{{ i + 1 }}</div>
+                            <div class="step-icon-box">
+                                <span class="material-icons step-icon">{{ step.icon }}</span>
+                            </div>
+                            <div class="step-content">
+                                <h4 class="step-title">{{ step.title }}</h4>
+                                <p class="step-description">{{ step.description }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- For Car Owners -->
+                <div class="works-section">
+                    <h3 class="works-subtitle">For Car Owners</h3>
+                    <div class="steps-timeline">
+                        <div class="step-card" *ngFor="let step of ownerSteps; let i = index">
+                            <div class="step-circle">{{ i + 1 }}</div>
+                            <div class="step-icon-box">
+                                <span class="material-icons step-icon">{{ step.icon }}</span>
+                            </div>
+                            <div class="step-content">
+                                <h4 class="step-title">{{ step.title }}</h4>
+                                <p class="step-description">{{ step.description }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action Section -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-content">
+                <h2 class="cta-title">Ready to Get Started?</h2>
+                <p class="cta-subtitle">Join thousands of Nigerians already enjoying affordable, secure car rentals.</p>
+                <div class="cta-buttons">
+                    <a routerLink="/search" class="btn btn-primary btn-large">
+                        <span class="btn-icon material-icons">search</span>
+                        Find a Car Now
+                    </a>
+                    <button class="btn btn-secondary btn-large" (click)="onListCarClick()">
+                        <span class="btn-icon material-icons">add_circle</span>
+                        List Your Car
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <h3 class="footer-logo">HireMyCar</h3>
+                    <p class="footer-tagline">Nigeria's trusted peer-to-peer car rental platform</p>
+                </div>
+                <div class="footer-links">
+                    <div class="footer-column">
+                        <h4>Company</h4>
+                        <ul>
+                            <li><a href="#">About Us</a></li>
+                            <li><a href="#">How It Works</a></li>
+                            <li><a href="#">Safety</a></li>
+                            <li><a href="#">Support</a></li>
+                        </ul>
+                    </div>
+                    <div class="footer-column">
+                        <h4>Legal</h4>
+                        <ul>
+                            <li><a href="#">Terms of Service</a></li>
+                            <li><a href="#">Privacy Policy</a></li>
+                            <li><a href="#">Insurance</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 HireMyCar.com.ng. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</div>
