@@ -1,370 +1,390 @@
-<div class="car-details-container">
-    <!-- Mobile Navigation -->
-    <div class="mobile-nav" [class.visible]="true">
-        <button class="nav-button back-nav" (click)="goBack()">
-            <i class="icon-chevron-left"></i>
-            Back
-        </button>
-        <button *ngFor="let section of ['overview', 'photos', 'reviews', 'book']"
-            [class.active]="activeSection === section" (click)="setActiveSection(section)" class="nav-button">
-            {{ section | titlecase }}
-        </button>
+<div class="car-details-page">
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="isLoading">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+        </div>
+        <p>Loading car details...</p>
     </div>
 
-    <!-- Photo Gallery -->
-    <section class="photo-gallery" [class.mobile-hidden]="activeSection !== 'photos'">
-        <div class="main-image">
-            <img [src]="car.images[selectedImageIndex]" [alt]="car.make + ' ' + car.model" class="main-photo">
-
-            <button class="nav-arrow prev" (click)="previousImage()">
-                <i class="icon-chevron-left"></i>
-            </button>
-            <button class="nav-arrow next" (click)="nextImage()">
-                <i class="icon-chevron-right"></i>
-            </button>
-
-            <div class="photo-counter">
-                {{ selectedImageIndex + 1 }} / {{ car.images.length }}
-            </div>
-        </div>
-
-        <div class="thumbnail-grid">
-            <button *ngFor="let image of car.images; let i = index" [class.active]="i === selectedImageIndex"
-                (click)="selectImage(i)" class="thumbnail">
-                <img [src]="image" [alt]="'Photo ' + (i + 1)">
-            </button>
-        </div>
-    </section>
-
-    <div class="content-grid">
-        <!-- Main Content -->
-        <div class="main-content">
-            <!-- Car Header -->
-            <section class="car-header" [class.mobile-hidden]="activeSection !== 'overview'">
-                <div class="header-top">
-                    <button class="back-button" (click)="goBack()">
-                        <i class="icon-chevron-left"></i>
-                        <span>Back to Search</span>
-                    </button>
-
+    <!-- Main Content -->
+    <div class="car-details-content" *ngIf="!isLoading && car">
+        <!-- Header -->
+        <header class="details-header">
+            <div class="container">
+                <div class="header-content">
                     <div class="breadcrumb">
-                        <a routerLink="/search">Search</a>
-                        <span class="separator">></span>
-                        <span>{{ car.make }} {{ car.model }}</span>
+                        <a routerLink="/" class="breadcrumb-link">Home</a>
+                        <span class="breadcrumb-separator">/</span>
+                        <a routerLink="/search" class="breadcrumb-link">Browse Cars</a>
+                        <span class="breadcrumb-separator">/</span>
+                        <span class="breadcrumb-current">{{ car.make }} {{ car.model }}</span>
                     </div>
                 </div>
+            </div>
+        </header>
 
-                <h1 class="car-title">{{ car.year }} {{ car.make }} {{ car.model }}</h1>
-
-                <div class="car-meta">
-                    <div class="rating">
-                        <div class="stars">
-                            <span *ngFor="let star of getStarArray(car.averageRating)" class="star"
-                                [class.filled]="star === 1">
-                                ★
-                            </span>
-                        </div>
-                        <span class="rating-text">{{ car.averageRating }} ({{ car.totalReviews }} reviews)</span>
-                    </div>
-
-                    <div class="location">
-                        <i class="icon-location"></i>
-                        {{ car.location.city }}, {{ car.location.state }}
-                    </div>
-
-                    <div class="instant-book" *ngIf="car.instantBook">
-                        <i class="icon-flash"></i>
-                        Instant Book
-                    </div>
-                </div>
-            </section>
-
-            <!-- Car Specifications -->
-            <section class="specifications" [class.mobile-hidden]="activeSection !== 'overview'">
-                <h2>Vehicle Details</h2>
-                <div class="spec-grid">
-                    <div class="spec-item">
-                        <i class="icon-users"></i>
-                        <span class="label">Seats</span>
-                        <span class="value">{{ car.specifications.seats }}</span>
-                    </div>
-                    <div class="spec-item">
-                        <i class="icon-car"></i>
-                        <span class="label">Doors</span>
-                        <span class="value">{{ car.specifications.doors }}</span>
-                    </div>
-                    <div class="spec-item">
-                        <i class="icon-settings"></i>
-                        <span class="label">Transmission</span>
-                        <span class="value">{{ car.specifications.transmission }}</span>
-                    </div>
-                    <div class="spec-item">
-                        <i class="icon-fuel"></i>
-                        <span class="label">Fuel Type</span>
-                        <span class="value">{{ car.specifications.fuelType }}</span>
-                    </div>
-                    <div class="spec-item">
-                        <i class="icon-gauge"></i>
-                        <span class="label">Mileage</span>
-                        <span class="value">{{ car.specifications.mileage }}</span>
-                    </div>
-                    <div class="spec-item">
-                        <i class="icon-engine"></i>
-                        <span class="label">Engine</span>
-                        <span class="value">{{ car.specifications.engineSize }}</span>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Features -->
-            <section class="features" [class.mobile-hidden]="activeSection !== 'overview'">
-                <h2>Features & Amenities</h2>
-                <div class="features-grid">
-                    <div *ngFor="let feature of (showAllFeatures ? car.features : car.features.slice(0, 8))"
-                        class="feature-item">
-                        <i class="icon-check"></i>
-                        <span>{{ feature }}</span>
-                    </div>
-                </div>
-
-                <button *ngIf="car.features.length > 8" (click)="toggleFeatures()" class="toggle-button">
-                    {{ showAllFeatures ? 'Show Less' : 'Show All Features' }}
-                </button>
-            </section>
-
-            <!-- Description -->
-            <section class="description" [class.mobile-hidden]="activeSection !== 'overview'">
-                <h2>About This Car</h2>
-                <p>{{ car.description }}</p>
-            </section>
-
-            <!-- Host Profile -->
-            <section class="host-profile" [class.mobile-hidden]="activeSection !== 'overview'">
-                <h2>Hosted by {{ car.host.name }}</h2>
-                <div class="host-card">
-                    <div class="host-avatar">
-                        <img [src]="car.host.photo" [alt]="car.host.name">
-                        <div class="verified-badge" *ngIf="car.host.verified">
-                            <i class="icon-verified"></i>
-                        </div>
-                    </div>
-
-                    <div class="host-info">
-                        <h3>{{ car.host.name }}</h3>
-                        <div class="host-stats">
-                            <div class="stat">
-                                <span class="label">Rating:</span>
-                                <span class="value">{{ car.host.rating }}/5</span>
-                            </div>
-                            <div class="stat">
-                                <span class="label">Reviews:</span>
-                                <span class="value">{{ car.host.totalReviews }}</span>
-                            </div>
-                            <div class="stat">
-                                <span class="label">Member since:</span>
-                                <span class="value">{{ car.host.memberSince }}</span>
-                            </div>
-                            <div class="stat">
-                                <span class="label">Response rate:</span>
-                                <span class="value">{{ car.host.responseRate }}%</span>
-                            </div>
-                            <div class="stat">
-                                <span class="label">Response time:</span>
-                                <span class="value">{{ car.host.responseTime }}</span>
+        <div class="container">
+            <div class="details-layout">
+                <!-- Main Content Area -->
+                <main class="main-content">
+                    <!-- Photo Gallery -->
+                    <section class="photo-gallery">
+                        <div class="main-image-container">
+                            <img [src]="car.images[currentImageIndex]" [alt]="car.make + ' ' + car.model"
+                                class="main-image">
+                            <button class="nav-btn prev-btn" (click)="previousImage()" *ngIf="currentImageIndex > 0">
+                                <span class="material-icons">chevron_left</span>
+                            </button>
+                            <button class="nav-btn next-btn" (click)="nextImage()"
+                                *ngIf="currentImageIndex < car.images.length - 1">
+                                <span class="material-icons">chevron_right</span>
+                            </button>
+                            <div class="image-counter">
+                                {{ currentImageIndex + 1 }} of {{ car.images.length }}
                             </div>
                         </div>
 
-                        <div class="host-languages">
-                            <span class="label">Languages:</span>
-                            <span class="languages">{{ car.host.languages.join(', ') }}</span>
+                        <div class="thumbnail-grid">
+                            <div class="thumbnail-item" *ngFor="let image of car.images.slice(0, 8); let i = index"
+                                [class.active]="i === currentImageIndex" (click)="selectImage(i)">
+                                <img [src]="image" [alt]="car.make + ' ' + car.model">
+                            </div>
+                            <button class="view-all-btn" (click)="toggleAllImages()" *ngIf="car.images.length > 8">
+                                <span class="material-icons">photo_library</span>
+                                View all {{ car.images.length }} photos
+                            </button>
                         </div>
-                    </div>
-                </div>
+                    </section>
 
-                <button class="contact-host-btn" (click)="contactHost()">
-                    <i class="icon-message"></i>
-                    Contact Host
-                </button>
-            </section>
-
-            <!-- Reviews -->
-            <section class="reviews" [class.mobile-hidden]="activeSection !== 'reviews'">
-                <div class="reviews-header">
-                    <h2>Reviews ({{ car.totalReviews }})</h2>
-                    <div class="overall-rating">
-                        <div class="stars">
-                            <span *ngFor="let star of getStarArray(car.averageRating)" class="star"
-                                [class.filled]="star === 1">
-                                ★
-                            </span>
+                    <!-- Car Information -->
+                    <section class="car-info">
+                        <div class="car-header">
+                            <div class="car-title-group">
+                                <h1 class="car-title">{{ car.make }} {{ car.model }}</h1>
+                                <span class="car-year">{{ car.year }}</span>
+                            </div>
+                            <div class="car-rating">
+                                <div class="stars">
+                                    <span class="material-icons star" *ngFor="let star of getStarRating(car.rating)"
+                                        [class.filled]="star === 1">
+                                        {{ star === 1 ? 'star' : 'star_border' }}
+                                    </span>
+                                </div>
+                                <span class="rating-text">{{ car.rating }}</span>
+                                <span class="review-count">({{ car.reviewCount }} reviews)</span>
+                            </div>
                         </div>
-                        <span class="rating-value">{{ car.averageRating }}</span>
-                    </div>
-                </div>
 
-                <div class="reviews-list">
-                    <div *ngFor="let review of (showAllReviews ? car.reviews : car.reviews.slice(0, 3))"
-                        class="review-item">
-                        <div class="review-header">
-                            <div class="reviewer-info">
-                                <img [src]="review.guestPhoto" [alt]="review.guestName" class="reviewer-avatar">
-                                <div class="reviewer-details">
-                                    <h4>{{ review.guestName }}</h4>
-                                    <span class="review-date">{{ formatDate(review.date) }}</span>
+                        <div class="car-location">
+                            <span class="material-icons">location_on</span>
+                            {{ car.location }}
+                        </div>
+
+                        <div class="car-specs">
+                            <div class="spec-item">
+                                <span class="material-icons">directions_car</span>
+                                <span>{{ car.type }}</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="material-icons">speed</span>
+                                <span>{{ car.mileage.toLocaleString() }} km</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="material-icons">local_gas_station</span>
+                                <span>{{ car.fuelType }}</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="material-icons">settings</span>
+                                <span>{{ car.transmission }}</span>
+                            </div>
+                            <div class="spec-item">
+                                <span class="material-icons">airline_seat_recline_normal</span>
+                                <span>{{ car.seats }} seats</span>
+                            </div>
+                        </div>
+
+                        <div class="car-description">
+                            <h3>About this car</h3>
+                            <p>{{ car.description }}</p>
+                        </div>
+
+                        <div class="car-features">
+                            <h3>Features</h3>
+                            <div class="features-grid">
+                                <div class="feature-item" *ngFor="let feature of car.features">
+                                    <span class="material-icons">check_circle</span>
+                                    <span>{{ feature }}</span>
                                 </div>
                             </div>
+                        </div>
+                    </section>
 
-                            <div class="review-rating">
-                                <div class="stars">
-                                    <span *ngFor="let star of getStarArray(review.rating)" class="star"
-                                        [class.filled]="star === 1">
-                                        ★
+                    <!-- Host Profile -->
+                    <section class="host-profile">
+                        <div class="host-header">
+                            <div class="host-info">
+                                <img [src]="car.host.photo" [alt]="car.host.name" class="host-photo">
+                                <div class="host-details">
+                                    <h3 class="host-name">{{ car.host.name }}</h3>
+                                    <div class="host-rating">
+                                        <div class="stars">
+                                            <span class="material-icons star"
+                                                *ngFor="let star of getStarRating(car.host.rating)"
+                                                [class.filled]="star === 1">
+                                                {{ star === 1 ? 'star' : 'star_border' }}
+                                            </span>
+                                        </div>
+                                        <span class="rating-text">{{ car.host.rating }}</span>
+                                        <span class="review-count">({{ car.host.reviewCount }} reviews)</span>
+                                    </div>
+                                    <div class="host-meta">
+                                        <span class="member-since">Member since {{ getMemberSince(car.host.memberSince)
+                                            }}</span>
+                                        <span class="response-rate">{{ car.host.responseRate }}% response rate</span>
+                                        <span class="response-time">Responds in {{ car.host.responseTime }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="host-badges">
+                                <div class="badge verified" *ngIf="car.host.verified">
+                                    <span class="material-icons">verified</span>
+                                    Verified
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="host-bio" *ngIf="!showHostDetails">
+                            <p>{{ car.host.bio }}</p>
+                            <button class="btn btn-text" (click)="toggleHostDetails()">
+                                Read more
+                            </button>
+                        </div>
+
+                        <div class="host-details-expanded" *ngIf="showHostDetails">
+                            <div class="host-stats">
+                                <div class="stat-item">
+                                    <span class="stat-number">{{ car.host.totalTrips }}</span>
+                                    <span class="stat-label">Trips completed</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-number">{{ car.host.responseRate }}%</span>
+                                    <span class="stat-label">Response rate</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-number">{{ car.host.responseTime }}</span>
+                                    <span class="stat-label">Response time</span>
+                                </div>
+                            </div>
+                            <div class="host-languages">
+                                <h4>Languages</h4>
+                                <div class="language-tags">
+                                    <span class="language-tag" *ngFor="let language of car.host.languages">
+                                        {{ language }}
                                     </span>
                                 </div>
                             </div>
-                        </div>
-
-                        <p class="review-comment">{{ review.comment }}</p>
-                        <span class="trip-date">Trip: {{ formatDate(review.tripDate) }}</span>
-                    </div>
-                </div>
-
-                <button *ngIf="car.reviews.length > 3" (click)="toggleReviews()" class="toggle-button">
-                    {{ showAllReviews ? 'Show Less' : 'Show All Reviews' }}
-                </button>
-            </section>
-
-            <!-- Location -->
-            <section class="location" [class.mobile-hidden]="activeSection !== 'overview'">
-                <h2>Pickup Location</h2>
-                <div class="location-info">
-                    <div class="address">
-                        <i class="icon-location"></i>
-                        <span>{{ car.location.address }}</span>
-                    </div>
-                    <div class="map-placeholder">
-                        <div class="map-content">
-                            <i class="icon-map"></i>
-                            <span>Interactive map would be displayed here</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
-
-        <!-- Booking Sidebar -->
-        <div class="booking-sidebar" [class.mobile-hidden]="activeSection !== 'book'">
-            <div class="booking-card">
-                <div class="pricing-header">
-                    <div class="daily-rate">
-                        <span class="price">{{ formatPrice(car.dailyRate) }}</span>
-                        <span class="period">/day</span>
-                    </div>
-                    <div class="instant-book-badge" *ngIf="car.instantBook">
-                        <i class="icon-flash"></i>
-                        Instant Book
-                    </div>
-                </div>
-
-                <!-- Availability Calendar -->
-                <div class="calendar-section">
-                    <h3>Select Dates</h3>
-                    <div class="calendar-header">
-                        <button (click)="navigateCalendar(-1)" class="calendar-nav">
-                            <i class="icon-chevron-left"></i>
-                        </button>
-                        <span class="month-year">
-                            {{ currentMonth.toLocaleDateString('en-NG', { month: 'long', year: 'numeric' }) }}
-                        </span>
-                        <button (click)="navigateCalendar(1)" class="calendar-nav">
-                            <i class="icon-chevron-right"></i>
-                        </button>
-                    </div>
-
-                    <div class="calendar-grid">
-                        <div class="calendar-weekdays">
-                            <span *ngFor="let day of ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']" class="weekday">
-                                {{ day }}
-                            </span>
-                        </div>
-
-                        <div class="calendar-days">
-                            <button *ngFor="let day of calendarDays" [class.current-month]="day.isCurrentMonth"
-                                [class.today]="day.isToday" [class.available]="day.isAvailable"
-                                [class.unavailable]="!day.isAvailable" [class.selected]="day.isSelected"
-                                [class.past]="day.isPast" [disabled]="!day.isAvailable" (click)="selectDate(day)"
-                                class="calendar-day">
-                                {{ day.day }}
+                            <button class="btn btn-text" (click)="toggleHostDetails()">
+                                Show less
                             </button>
                         </div>
-                    </div>
+                    </section>
 
-                    <div class="calendar-legend">
-                        <div class="legend-item">
-                            <div class="legend-color available"></div>
-                            <span>Available</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color unavailable"></div>
-                            <span>Unavailable</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color selected"></div>
-                            <span>Selected</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Booking Form -->
-                <form [formGroup]="bookingForm" class="booking-form">
-                    <div class="selected-dates" *ngIf="booking.startDate && booking.endDate">
-                        <div class="date-range">
-                            <div class="date-item">
-                                <label>Check-in</label>
-                                <span>{{ booking.startDate | date:'mediumDate' }}</span>
-                            </div>
-                            <div class="date-item">
-                                <label>Check-out</label>
-                                <span>{{ booking.endDate | date:'mediumDate' }}</span>
+                    <!-- Reviews Section -->
+                    <section class="reviews-section">
+                        <div class="reviews-header">
+                            <h3>Reviews</h3>
+                            <div class="reviews-summary">
+                                <div class="stars">
+                                    <span class="material-icons star" *ngFor="let star of getStarRating(car.rating)"
+                                        [class.filled]="star === 1">
+                                        {{ star === 1 ? 'star' : 'star_border' }}
+                                    </span>
+                                </div>
+                                <span class="rating-text">{{ car.rating }}</span>
+                                <span class="review-count">{{ car.reviewCount }} reviews</span>
                             </div>
                         </div>
-                        <div class="trip-duration">
-                            {{ booking.totalDays }} {{ booking.totalDays === 1 ? 'day' : 'days' }}
+
+                        <div class="reviews-list">
+                            <div class="review-item"
+                                *ngFor="let review of car.reviews.slice(0, showAllReviews ? car.reviews.length : 3)">
+                                <div class="review-header">
+                                    <img [src]="review.userPhoto" [alt]="review.userName" class="reviewer-photo">
+                                    <div class="reviewer-info">
+                                        <h4 class="reviewer-name">{{ review.userName }}</h4>
+                                        <div class="review-rating">
+                                            <div class="stars">
+                                                <span class="material-icons star"
+                                                    *ngFor="let star of getStarRating(review.rating)"
+                                                    [class.filled]="star === 1">
+                                                    {{ star === 1 ? 'star' : 'star_border' }}
+                                                </span>
+                                            </div>
+                                            <span class="review-date">{{ formatDate(review.date) }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p class="review-comment">{{ review.comment }}</p>
+                                <div class="review-footer">
+                                    <span class="trip-date">Trip on {{ formatDate(review.tripDate) }}</span>
+                                    <button class="helpful-btn">
+                                        <span class="material-icons">thumb_up</span>
+                                        Helpful ({{ review.helpful }})
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button class="btn btn-outline" (click)="toggleAllReviews()" *ngIf="car.reviews.length > 3">
+                            {{ showAllReviews ? 'Show less' : 'Show all ' + car.reviews.length + ' reviews' }}
+                        </button>
+                    </section>
+
+                    <!-- Location Section -->
+                    <section class="location-section">
+                        <h3>Location</h3>
+                        <div class="location-details">
+                            <div class="location-item">
+                                <div class="location-icon">
+                                    <span class="material-icons">location_on</span>
+                                </div>
+                                <div class="location-info">
+                                    <h4>Pickup Location</h4>
+                                    <p>{{ car.pickupLocation }}</p>
+                                </div>
+                            </div>
+                            <div class="location-item">
+                                <div class="location-icon">
+                                    <span class="material-icons">location_on</span>
+                                </div>
+                                <div class="location-info">
+                                    <h4>Dropoff Location</h4>
+                                    <p>{{ car.dropoffLocation }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </main>
+
+                <!-- Sidebar -->
+                <aside class="sidebar">
+                    <!-- Booking Card -->
+                    <div class="booking-card">
+                        <div class="price-section">
+                            <div class="price">
+                                <span class="price-amount">{{ formatPrice(car.pricePerDay) }}</span>
+                                <span class="price-period">per day</span>
+                            </div>
+                            <div class="car-rating-mini">
+                                <div class="stars">
+                                    <span class="material-icons star" *ngFor="let star of getStarRating(car.rating)"
+                                        [class.filled]="star === 1">
+                                        {{ star === 1 ? 'star' : 'star_border' }}
+                                    </span>
+                                </div>
+                                <span class="rating-text">{{ car.rating }}</span>
+                                <span class="review-count">({{ car.reviewCount }})</span>
+                            </div>
+                        </div>
+
+                        <!-- Booking Form -->
+                        <div class="booking-form" [class.expanded]="showBookingForm">
+                            <div class="date-inputs">
+                                <div class="input-group">
+                                    <label>Pick-up date</label>
+                                    <input type="date" [(ngModel)]="booking.startDate" (change)="onDateChange()"
+                                        class="date-input">
+                                </div>
+                                <div class="input-group">
+                                    <label>Return date</label>
+                                    <input type="date" [(ngModel)]="booking.endDate" (change)="onDateChange()"
+                                        class="date-input">
+                                </div>
+                            </div>
+
+                            <div class="booking-summary" *ngIf="booking.days > 0">
+                                <div class="summary-item">
+                                    <span>{{ formatPrice(car.pricePerDay) }} × {{ booking.days }} days</span>
+                                    <span>{{ formatPrice(booking.subtotal) }}</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span>Service fee</span>
+                                    <span>{{ formatPrice(booking.serviceFee) }}</span>
+                                </div>
+                                <div class="summary-item">
+                                    <span>Insurance</span>
+                                    <span>{{ formatPrice(booking.insuranceFee) }}</span>
+                                </div>
+                                <div class="summary-total">
+                                    <span>Total</span>
+                                    <span>{{ formatPrice(booking.total) }}</span>
+                                </div>
+                            </div>
+
+                            <button class="btn btn-primary btn-full" (click)="bookNow()">
+                                <span class="material-icons">check_circle</span>
+                                Book Now
+                            </button>
+                        </div>
+
+                        <button class="btn btn-outline btn-full" (click)="contactHost()">
+                            <span class="material-icons">message</span>
+                            Contact Host
+                        </button>
+                    </div>
+
+                    <!-- Availability Calendar -->
+                    <div class="availability-card">
+                        <h4>Availability</h4>
+                        <div class="calendar-grid">
+                            <div class="calendar-header">
+                                <span>Sun</span>
+                                <span>Mon</span>
+                                <span>Tue</span>
+                                <span>Wed</span>
+                                <span>Thu</span>
+                                <span>Fri</span>
+                                <span>Sat</span>
+                            </div>
+                            <div class="calendar-days">
+                                <div class="calendar-day" *ngFor="let availability of car.availability.slice(0, 35)"
+                                    [class.available]="availability.isAvailable"
+                                    [class.unavailable]="!availability.isAvailable">
+                                    {{ getDayFromDate(availability.date) }}
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Price Breakdown -->
-                    <div class="price-breakdown" *ngIf="booking.totalDays > 0">
-                        <div class="breakdown-item">
-                            <span>{{ formatPrice(booking.dailyRate) }} × {{ booking.totalDays }} days</span>
-                            <span>{{ formatPrice(booking.subtotal) }}</span>
+                    <!-- Policies -->
+                    <div class="policies-card">
+                        <h4>Policies</h4>
+                        <div class="policy-item">
+                            <span class="material-icons">security</span>
+                            <div class="policy-info">
+                                <h5>Insurance</h5>
+                                <p>{{ car.insurance }}</p>
+                            </div>
                         </div>
-                        <div class="breakdown-item">
-                            <span>Service fee</span>
-                            <span>{{ formatPrice(booking.serviceFee) }}</span>
-                        </div>
-                        <div class="breakdown-item">
-                            <span>Insurance</span>
-                            <span>{{ formatPrice(booking.insurance) }}</span>
-                        </div>
-                        <div class="breakdown-total">
-                            <span>Total</span>
-                            <span>{{ formatPrice(booking.total) }}</span>
+                        <div class="policy-item">
+                            <span class="material-icons">cancel</span>
+                            <div class="policy-info">
+                                <h5>Cancellation</h5>
+                                <p>{{ car.cancellationPolicy }}</p>
+                            </div>
                         </div>
                     </div>
-
-                    <button type="button" (click)="bookNow()" [disabled]="!bookingForm.valid || booking.totalDays === 0"
-                        class="book-now-btn">
-                        {{ booking.totalDays === 0 ? 'Select Dates' : 'Book Now' }}
-                    </button>
-                </form>
-
-                <!-- Cancellation Policy -->
-                <div class="cancellation-policy">
-                    <h4>Cancellation Policy</h4>
-                    <p>{{ car.cancellationPolicy }}</p>
-                </div>
+                </aside>
             </div>
         </div>
+    </div>
+
+    <!-- Mobile Action Buttons -->
+    <div class="mobile-actions" *ngIf="!isLoading && car">
+        <button class="btn btn-primary btn-full" (click)="bookNow()">
+            <span class="material-icons">check_circle</span>
+            Book Now - {{ formatPrice(car.pricePerDay) }}/day
+        </button>
     </div>
 </div>

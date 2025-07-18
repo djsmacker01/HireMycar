@@ -1,38 +1,33 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule, ActivatedRoute, Router } from '@angular/router';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Location } from '@angular/common';
+import { RouterModule, ActivatedRoute } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 
+// Interfaces
 export interface CarDetails {
   id: string;
   make: string;
   model: string;
   year: number;
+  type: string;
+  pricePerDay: number;
+  location: string;
+  rating: number;
+  reviewCount: number;
   images: string[];
-  description: string;
-  dailyRate: number;
-  location: {
-    city: string;
-    state: string;
-    address: string;
-    coordinates: { lat: number; lng: number };
-  };
   features: string[];
-  specifications: {
-    transmission: string;
-    fuelType: string;
-    seats: number;
-    doors: number;
-    mileage: string;
-    engineSize: string;
-  };
+  description: string;
+  mileage: number;
+  fuelType: string;
+  transmission: string;
+  seats: number;
+  isAvailable: boolean;
   host: Host;
   reviews: Review[];
-  totalReviews: number;
-  averageRating: number;
-  availability: { [date: string]: boolean };
-  instantBook: boolean;
+  availability: AvailabilityDate[];
+  pickupLocation: string;
+  dropoffLocation: string;
+  insurance: string;
   cancellationPolicy: string;
 }
 
@@ -41,344 +36,347 @@ export interface Host {
   name: string;
   photo: string;
   rating: number;
-  totalReviews: number;
+  reviewCount: number;
   memberSince: string;
   responseRate: number;
   responseTime: string;
   verified: boolean;
+  totalTrips: number;
   languages: string[];
+  bio: string;
 }
 
 export interface Review {
   id: string;
-  guestName: string;
-  guestPhoto: string;
+  userId: string;
+  userName: string;
+  userPhoto: string;
   rating: number;
   comment: string;
   date: string;
   tripDate: string;
+  helpful: number;
+}
+
+export interface AvailabilityDate {
+  date: string;
+  isAvailable: boolean;
+  price?: number;
 }
 
 export interface Booking {
-  startDate: Date | null;
-  endDate: Date | null;
-  totalDays: number;
+  startDate: string;
+  endDate: string;
+  days: number;
   dailyRate: number;
   subtotal: number;
   serviceFee: number;
-  insurance: number;
+  insuranceFee: number;
   total: number;
 }
 
 @Component({
   selector: 'app-car-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, FormsModule],
   templateUrl: './car-details.component.html',
   styleUrls: ['./car-details.component.scss']
 })
 export class CarDetailsComponent implements OnInit {
-  car!: CarDetails;
-  selectedImageIndex = 0;
-  bookingForm: FormGroup;
+  constructor(private route: ActivatedRoute) {}
+  
+  // Car details
+  car: CarDetails | null = null;
+  currentImageIndex = 0;
+  showAllImages = false;
+  
+  // Booking
   booking: Booking = {
-    startDate: null,
-    endDate: null,
-    totalDays: 0,
+    startDate: '',
+    endDate: '',
+    days: 0,
     dailyRate: 0,
     subtotal: 0,
     serviceFee: 0,
-    insurance: 0,
+    insuranceFee: 0,
     total: 0
   };
   
-  currentMonth = new Date();
-  calendarDays: any[] = [];
-  selectedDates: Date[] = [];
-  isSelectingRange = false;
-  
-  // Mobile responsive states
-  showAllFeatures = false;
+  // UI states
+  isLoading = true;
+  showBookingForm = false;
   showAllReviews = false;
-  activeSection = 'overview';
+  showHostDetails = false;
   
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private location: Location,
-    private fb: FormBuilder
-  ) {
-    this.bookingForm = this.fb.group({
-      startDate: ['', Validators.required],
-      endDate: ['', Validators.required],
-      guests: [1, [Validators.required, Validators.min(1)]]
+  // Mock data
+  private mockCar: CarDetails = {
+    id: '1',
+    make: 'Toyota',
+    model: 'Camry',
+    year: 2022,
+    type: 'Sedan',
+    pricePerDay: 25000,
+    location: 'Lagos',
+    rating: 4.8,
+    reviewCount: 24,
+    mileage: 45000,
+    fuelType: 'Petrol',
+    transmission: 'Automatic',
+    seats: 5,
+    isAvailable: true,
+    images: [
+      'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1563720223185-11003d516935?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1617470706004-e6c5f0c6d10c?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1549924231-f129b911e442?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop'
+    ],
+    features: [
+      'Air Conditioning',
+      'Bluetooth Connectivity',
+      'GPS Navigation',
+      'Backup Camera',
+      'Leather Seats',
+      'Sunroof',
+      'USB Charging',
+      'Apple CarPlay',
+      'Android Auto',
+      'Cruise Control',
+      'Keyless Entry',
+      'Push Start'
+    ],
+    description: `Experience luxury and comfort with this pristine 2022 Toyota Camry. This well-maintained sedan offers the perfect blend of style, performance, and reliability for your journey across Nigeria.
+
+The vehicle comes equipped with modern amenities including automatic transmission, climate control, and advanced safety features. Perfect for business trips, family outings, or exploring the beautiful cities of Nigeria.
+
+The car is regularly serviced and maintained to ensure optimal performance and safety. All safety features are fully functional, and the vehicle is insured for your peace of mind.`,
+    host: {
+      id: '1',
+      name: 'John Adebayo',
+      photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+      rating: 4.9,
+      reviewCount: 156,
+      memberSince: '2020-03-15',
+      responseRate: 98,
+      responseTime: '1 hour',
+      verified: true,
+      totalTrips: 89,
+      languages: ['English', 'Yoruba'],
+      bio: 'Professional car enthusiast with over 3 years of hosting experience. I maintain my vehicles to the highest standards and ensure every guest has a comfortable and safe journey.'
+    },
+    reviews: [
+      {
+        id: '1',
+        userId: 'user1',
+        userName: 'Sarah Wilson',
+        userPhoto: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=50&h=50&fit=crop&crop=face',
+        rating: 5,
+        comment: 'Excellent car and amazing host! The Camry was in perfect condition and John was very responsive. Highly recommend!',
+        date: '2024-01-15',
+        tripDate: '2024-01-10',
+        helpful: 12
+      },
+      {
+        id: '2',
+        userId: 'user2',
+        userName: 'Michael Chen',
+        userPhoto: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face',
+        rating: 5,
+        comment: 'Great experience! The car was clean, well-maintained, and the pickup/dropoff process was smooth. Will definitely rent again.',
+        date: '2024-01-08',
+        tripDate: '2024-01-05',
+        helpful: 8
+      },
+      {
+        id: '3',
+        userId: 'user3',
+        userName: 'Fatima Yusuf',
+        userPhoto: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=50&h=50&fit=crop&crop=face',
+        rating: 4,
+        comment: 'Good car overall. Clean and comfortable. The only minor issue was the GPS signal was weak in some areas, but John was very helpful.',
+        date: '2024-01-03',
+        tripDate: '2023-12-28',
+        helpful: 5
+      },
+      {
+        id: '4',
+        userId: 'user4',
+        userName: 'David Okonkwo',
+        userPhoto: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=50&h=50&fit=crop&crop=face',
+        rating: 5,
+        comment: 'Perfect rental experience! The car exceeded my expectations. John is a professional host who really cares about his guests.',
+        date: '2023-12-25',
+        tripDate: '2023-12-20',
+        helpful: 15
+      },
+      {
+        id: '5',
+        userId: 'user5',
+        userName: 'Grace Adebayo',
+        userPhoto: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=50&h=50&fit=crop&crop=face',
+        rating: 5,
+        comment: 'Amazing car and service! The Toyota Camry was in excellent condition and the host was very accommodating. Highly recommended!',
+        date: '2023-12-18',
+        tripDate: '2023-12-15',
+        helpful: 9
+      }
+    ],
+    availability: this.generateAvailabilityDates(),
+    pickupLocation: 'Victoria Island, Lagos',
+    dropoffLocation: 'Victoria Island, Lagos',
+    insurance: 'Comprehensive coverage included',
+    cancellationPolicy: 'Free cancellation up to 24 hours before trip'
+  };
+
+  ngOnInit(): void {
+    this.route.params.subscribe(params => {
+      const carId = params['id'];
+      this.loadCarDetails(carId);
     });
   }
 
-  ngOnInit() {
-    // Get car ID from route parameter
-    const carId = this.route.snapshot.paramMap.get('id');
-    console.log('Car ID from route:', carId);
-    
-    this.loadCarDetails();
-    this.generateCalendar();
-    this.setupBookingCalculation();
+  loadCarDetails(carId: string): void {
+    this.isLoading = true;
+    // Simulate API call
+    setTimeout(() => {
+      this.car = this.mockCar;
+      this.booking.dailyRate = this.car.pricePerDay;
+      this.isLoading = false;
+    }, 1000);
   }
 
-  loadCarDetails() {
-    // Mock data for a single car
-    this.car = {
-      id: 'car-001',
-      make: 'Toyota',
-      model: 'Camry',
-      year: 2022,
-      images: [
-        'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=800&h=600&fit=crop',
-        'https://images.unsplash.com/photo-1596854407944-bf87f6fdd49e?w=800&h=600&fit=crop'
-      ],
-      description: 'Experience luxury and comfort with this pristine 2022 Toyota Camry. Perfect for business trips, family outings, or special occasions around Lagos. This vehicle is meticulously maintained and comes with all modern amenities for a smooth and enjoyable ride.',
-      dailyRate: 25000,
-      location: {
-        city: 'Lagos',
-        state: 'Lagos',
-        address: 'Victoria Island, Lagos',
-        coordinates: { lat: 6.4281, lng: 3.4219 }
-      },
-      features: [
-        'Air Conditioning',
-        'Bluetooth',
-        'GPS Navigation',
-        'Backup Camera',
-        'Heated Seats',
-        'Sunroof',
-        'USB Charging',
-        'Keyless Entry',
-        'Cruise Control',
-        'Premium Sound System',
-        'Lane Departure Warning',
-        'Automatic Emergency Braking'
-      ],
-      specifications: {
-        transmission: 'Automatic',
-        fuelType: 'Petrol',
-        seats: 5,
-        doors: 4,
-        mileage: '15 km/L',
-        engineSize: '2.5L'
-      },
-      host: {
-        id: 'host-001',
-        name: 'Adebayo Okonkwo',
-        photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-        rating: 4.9,
-        totalReviews: 127,
-        memberSince: '2019',
-        responseRate: 98,
-        responseTime: '1 hour',
-        verified: true,
-        languages: ['English', 'Yoruba', 'Igbo']
-      },
-      reviews: [
-        {
-          id: 'rev-001',
-          guestName: 'Chioma Adebayo',
-          guestPhoto: 'https://images.unsplash.com/photo-1494790108755-2616b332c4b5?w=50&h=50&fit=crop&crop=face',
-          rating: 5,
-          comment: 'Excellent car and great host! The Toyota Camry was in perfect condition and Adebayo was very responsive. Highly recommend for anyone visiting Lagos.',
-          date: '2024-12-15',
-          tripDate: '2024-12-10'
-        },
-        {
-          id: 'rev-002',
-          guestName: 'Emeka Okafor',
-          guestPhoto: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face',
-          rating: 5,
-          comment: 'Amazing experience! The car was clean, comfortable, and exactly as described. Perfect for my business meetings around the city.',
-          date: '2024-12-08',
-          tripDate: '2024-12-05'
-        },
-        {
-          id: 'rev-003',
-          guestName: 'Fatima Hassan',
-          guestPhoto: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=50&h=50&fit=crop&crop=face',
-          rating: 4,
-          comment: 'Great car for family trips. Spacious and comfortable. The pickup process was smooth and Adebayo provided clear instructions.',
-          date: '2024-11-28',
-          tripDate: '2024-11-25'
-        }
-      ],
-      totalReviews: 127,
-      averageRating: 4.9,
-      availability: this.generateAvailability(),
-      instantBook: true,
-      cancellationPolicy: 'Free cancellation up to 24 hours before pickup'
-    };
-    
-    this.booking.dailyRate = this.car.dailyRate;
+  // Image gallery methods
+  selectImage(index: number): void {
+    this.currentImageIndex = index;
   }
 
-  generateAvailability(): { [date: string]: boolean } {
-    const availability: { [date: string]: boolean } = {};
+  nextImage(): void {
+    if (this.car && this.currentImageIndex < this.car.images.length - 1) {
+      this.currentImageIndex++;
+    }
+  }
+
+  previousImage(): void {
+    if (this.currentImageIndex > 0) {
+      this.currentImageIndex--;
+    }
+  }
+
+  // Booking methods
+  onDateChange(): void {
+    if (this.booking.startDate && this.booking.endDate) {
+      const start = new Date(this.booking.startDate);
+      const end = new Date(this.booking.endDate);
+      const diffTime = Math.abs(end.getTime() - start.getTime());
+      this.booking.days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      
+      if (this.car) {
+        this.booking.dailyRate = this.car.pricePerDay;
+        this.booking.subtotal = this.booking.days * this.booking.dailyRate;
+        this.booking.serviceFee = Math.round(this.booking.subtotal * 0.10);
+        this.booking.insuranceFee = Math.round(this.booking.subtotal * 0.05);
+        this.booking.total = this.booking.subtotal + this.booking.serviceFee + this.booking.insuranceFee;
+      }
+    }
+  }
+
+  bookNow(): void {
+    if (this.booking.startDate && this.booking.endDate) {
+      console.log('Booking:', this.booking);
+      // TODO: Implement booking logic
+      alert('Booking functionality will be implemented here');
+    } else {
+      alert('Please select your travel dates');
+    }
+  }
+
+  contactHost(): void {
+    console.log('Contact host:', this.car?.host.name);
+    // TODO: Implement contact host logic
+    alert('Contact host functionality will be implemented here');
+  }
+
+  // Utility methods
+  getStarRating(rating: number): number[] {
+    return Array.from({ length: 5 }, (_, i) => i < Math.floor(rating) ? 1 : 0);
+  }
+
+  formatPrice(price: number): string {
+    return `₦${price.toLocaleString()}`;
+  }
+
+  formatDate(date: string): string {
+    return new Date(date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  }
+
+  getMemberSince(date: string): string {
+    const memberDate = new Date(date);
+    const now = new Date();
+    const diffYears = now.getFullYear() - memberDate.getFullYear();
+    return `${diffYears} year${diffYears !== 1 ? 's' : ''}`;
+  }
+
+  getDayFromDate(date: string): number {
+    return new Date(date).getDate();
+  }
+
+  isDateAvailable(date: string): boolean {
+    if (!this.car) return false;
+    const availability = this.car.availability.find(a => a.date === date);
+    return availability ? availability.isAvailable : true;
+  }
+
+  private generateAvailabilityDates(): AvailabilityDate[] {
+    const dates: AvailabilityDate[] = [];
     const today = new Date();
     
     for (let i = 0; i < 60; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
-      const dateStr = date.toISOString().split('T')[0];
+      const dateString = date.toISOString().split('T')[0];
       
-      // Make some dates unavailable (randomly for demo)
-      availability[dateStr] = Math.random() > 0.2;
-    }
-    
-    return availability;
-  }
-
-  generateCalendar() {
-    const year = this.currentMonth.getFullYear();
-    const month = this.currentMonth.getMonth();
-    
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startDate = new Date(firstDay);
-    startDate.setDate(startDate.getDate() - firstDay.getDay());
-    
-    this.calendarDays = [];
-    
-    for (let i = 0; i < 42; i++) {
-      const date = new Date(startDate);
-      date.setDate(startDate.getDate() + i);
+      // Randomly make some dates unavailable
+      const isAvailable = Math.random() > 0.2; // 80% availability
       
-      const dateStr = date.toISOString().split('T')[0];
-      const isCurrentMonth = date.getMonth() === month;
-      const isToday = date.toDateString() === new Date().toDateString();
-      const isAvailable = this.car?.availability[dateStr] ?? true;
-      const isPast = date < new Date();
-      
-      this.calendarDays.push({
-        date,
-        dateStr,
-        day: date.getDate(),
-        isCurrentMonth,
-        isToday,
-        isAvailable: isAvailable && !isPast,
-        isPast,
-        isSelected: this.selectedDates.some(d => d.toDateString() === date.toDateString())
+      dates.push({
+        date: dateString,
+        isAvailable: isAvailable,
+        price: 25000
       });
     }
-  }
-
-  selectImage(index: number) {
-    this.selectedImageIndex = index;
-  }
-
-  previousImage() {
-    this.selectedImageIndex = this.selectedImageIndex > 0 
-      ? this.selectedImageIndex - 1 
-      : this.car.images.length - 1;
-  }
-
-  nextImage() {
-    this.selectedImageIndex = this.selectedImageIndex < this.car.images.length - 1 
-      ? this.selectedImageIndex + 1 
-      : 0;
-  }
-
-  selectDate(day: any) {
-    if (!day.isAvailable) return;
     
-    if (this.selectedDates.length === 0) {
-      this.selectedDates = [day.date];
-      this.isSelectingRange = true;
-    } else if (this.selectedDates.length === 1) {
-      const startDate = this.selectedDates[0];
-      const endDate = day.date;
-      
-      if (endDate > startDate) {
-        this.selectedDates = [startDate, endDate];
-        this.booking.startDate = startDate;
-        this.booking.endDate = endDate;
-        this.calculateBooking();
-      } else {
-        this.selectedDates = [day.date];
-      }
-      this.isSelectingRange = false;
-    } else {
-      this.selectedDates = [day.date];
-      this.isSelectingRange = true;
-    }
-    
-    this.generateCalendar();
+    return dates;
   }
 
-  navigateCalendar(direction: number) {
-    this.currentMonth.setMonth(this.currentMonth.getMonth() + direction);
-    this.generateCalendar();
+  // UI toggle methods
+  toggleBookingForm(): void {
+    this.showBookingForm = !this.showBookingForm;
   }
 
-  setupBookingCalculation() {
-    this.bookingForm.valueChanges.subscribe(() => {
-      this.calculateBooking();
-    });
-  }
-
-  calculateBooking() {
-    if (this.booking.startDate && this.booking.endDate) {
-      const timeDiff = this.booking.endDate.getTime() - this.booking.startDate.getTime();
-      this.booking.totalDays = Math.ceil(timeDiff / (1000 * 3600 * 24));
-      
-      this.booking.subtotal = this.booking.totalDays * this.booking.dailyRate;
-      this.booking.serviceFee = Math.round(this.booking.subtotal * 0.1);
-      this.booking.insurance = Math.round(this.booking.subtotal * 0.05);
-      this.booking.total = this.booking.subtotal + this.booking.serviceFee + this.booking.insurance;
-    }
-  }
-
-  bookNow() {
-    if (this.bookingForm.valid && this.booking.startDate && this.booking.endDate) {
-      alert('Booking functionality would be implemented here');
-    }
-  }
-
-  contactHost() {
-    alert('Contact host functionality would be implemented here');
-  }
-
-  goBack() {
-    this.location.back();
-  }
-
-  toggleFeatures() {
-    this.showAllFeatures = !this.showAllFeatures;
-  }
-
-  toggleReviews() {
+  toggleAllReviews(): void {
     this.showAllReviews = !this.showAllReviews;
   }
 
-  setActiveSection(section: string) {
-    this.activeSection = section;
+  toggleHostDetails(): void {
+    this.showHostDetails = !this.showHostDetails;
   }
 
-  getStarArray(rating: number): number[] {
-    return Array(5).fill(0).map((_, i) => i < Math.floor(rating) ? 1 : 0);
-  }
-
-  formatPrice(amount: number): string {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: 'NGN',
-      minimumFractionDigits: 0
-    }).format(amount);
-  }
-
-  formatDate(date: string): string {
-    return new Date(date).toLocaleDateString('en-NG', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+  toggleAllImages(): void {
+    this.showAllImages = !this.showAllImages;
   }
 } 
