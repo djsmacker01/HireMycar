@@ -1,0 +1,536 @@
+<div class="dashboard-container">
+    <!-- Header with Search and Actions -->
+    <div class="dashboard-header">
+        <div class="header-left">
+            <h1>Car Owner Dashboard</h1>
+            <p class="subtitle">Manage your car listings and bookings</p>
+        </div>
+        <div class="header-right">
+            <div class="search-container">
+                <input type="text" placeholder="Search bookings, cars..." [(ngModel)]="searchTerm" class="search-input">
+                <button class="search-btn">🔍</button>
+            </div>
+            <button class="btn btn-primary" (click)="addNewCar()">
+                <span>+</span> Add New Car
+            </button>
+            <button class="btn btn-secondary" (click)="refreshData()" [class.loading]="isRefreshing">
+                <span *ngIf="!isRefreshing">🔄</span>
+                <span *ngIf="isRefreshing" class="spinner">⏳</span>
+                Refresh
+            </button>
+        </div>
+    </div>
+
+    <!-- Notification System -->
+    <div class="notification" *ngIf="showNotification" [class]="'notification-' + notificationType">
+        <span class="notification-icon">
+            {{ notificationType === 'success' ? '✓' : notificationType === 'error' ? '✗' : 'ℹ' }}
+        </span>
+        <span class="notification-message">{{ notificationMessage }}</span>
+        <button class="notification-close" (click)="showNotification = false">×</button>
+    </div>
+
+    <!-- Dashboard Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">💰</div>
+            <div class="stat-content">
+                <h3>{{ formatCurrency(dashboardStats.totalEarnings) }}</h3>
+                <p>Total Earnings</p>
+            </div>
+            <div class="stat-trend positive">+12.5%</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">🚗</div>
+            <div class="stat-content">
+                <h3>{{ dashboardStats.activeListings }}</h3>
+                <p>Active Listings</p>
+            </div>
+            <div class="stat-trend positive">+2</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">📋</div>
+            <div class="stat-content">
+                <h3>{{ dashboardStats.pendingBookings }}</h3>
+                <p>Pending Bookings</p>
+            </div>
+            <div class="stat-trend neutral">New</div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">⭐</div>
+            <div class="stat-content">
+                <h3>{{ dashboardStats.ratingAverage }}/5.0</h3>
+                <p>Average Rating</p>
+            </div>
+            <div class="stat-trend positive">+0.2</div>
+        </div>
+    </div>
+
+    <!-- Filters and Controls -->
+    <div class="filters-section">
+        <div class="filters-header">
+            <h3>Filters & Controls</h3>
+            <button class="btn btn-text" (click)="showFilters = !showFilters">
+                {{ showFilters ? 'Hide' : 'Show' }} Filters
+            </button>
+        </div>
+
+        <div class="filters-content" *ngIf="showFilters">
+            <div class="filter-group">
+                <label>Status:</label>
+                <select [(ngModel)]="selectedStatus" class="filter-select">
+                    <option value="all">All Status</option>
+                    <option value="Pending">Pending</option>
+                    <option value="Confirmed">Confirmed</option>
+                    <option value="Completed">Completed</option>
+                    <option value="Cancelled">Cancelled</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Date Range:</label>
+                <select [(ngModel)]="selectedDateRange" class="filter-select">
+                    <option value="all">All Time</option>
+                    <option value="week">Last Week</option>
+                    <option value="month">Last Month</option>
+                    <option value="quarter">Last Quarter</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Earnings Range:</label>
+                <select [(ngModel)]="selectedEarningsRange" class="filter-select">
+                    <option value="all">All Earnings</option>
+                    <option value="low">Low (₦0 - ₦50k)</option>
+                    <option value="medium">Medium (₦50k - ₦100k)</option>
+                    <option value="high">High (₦100k+)</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Sort By:</label>
+                <select [(ngModel)]="sortBy" class="filter-select">
+                    <option value="date">Date</option>
+                    <option value="earnings">Earnings</option>
+                    <option value="renter">Renter Name</option>
+                    <option value="car">Car Title</option>
+                </select>
+                <button class="btn btn-icon" (click)="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'">
+                    {{ sortOrder === 'asc' ? '↑' : '↓' }}
+                </button>
+            </div>
+
+            <button class="btn btn-outline" (click)="clearFilters()">Clear Filters</button>
+            <button class="btn btn-outline" (click)="exportData()">Export Data</button>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="dashboard-grid">
+        <!-- Recent Bookings Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3>Recent Bookings ({{ filteredBookings.length }})</h3>
+                <button class="btn btn-text" (click)="viewAllBookingsEnhanced()">
+                    View All
+                </button>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Renter</th>
+                            <th>Car</th>
+                            <th>Dates</th>
+                            <th>Status</th>
+                            <th>Earnings</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let booking of filteredBookings" class="table-row">
+                            <td>
+                                <div class="renter-info">
+                                    <strong>{{ booking.renterName }}</strong>
+                                    <small>{{ booking.renterPhone }}</small>
+                                </div>
+                            </td>
+                            <td>{{ booking.carTitle }}</td>
+                            <td>
+                                <div class="date-info">
+                                    <div>{{ formatDate(booking.pickupDate) }} - {{ formatDate(booking.returnDate) }}
+                                    </div>
+                                    <small>{{ booking.returnDate.getTime() - booking.pickupDate.getTime() | date:'d' }}
+                                        days</small>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="status-badge" [class]="getStatusColor(booking.status)">
+                                    {{ getStatusIcon(booking.status) }} {{ booking.status }}
+                                </span>
+                            </td>
+                            <td class="earnings">{{ formatCurrency(booking.earnings) }}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn btn-sm btn-outline" (click)="viewBookingDetails(booking)">
+                                        View
+                                    </button>
+                                    <button class="btn btn-sm btn-primary" *ngIf="booking.status === 'Pending'"
+                                        (click)="acceptBooking(booking.id)">
+                                        Accept
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" *ngIf="booking.status === 'Pending'"
+                                        (click)="declineBooking(booking.id)">
+                                        Decline
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Car Listings Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3>Car Listings ({{ filteredCars.length }})</h3>
+                <div class="car-stats">
+                    <span class="stat-item">
+                        <span class="stat-number">{{ getAvailableCars().length }}</span>
+                        <span class="stat-label">Available</span>
+                    </span>
+                    <span class="stat-item">
+                        <span class="stat-number">{{ getUnavailableCars().length }}</span>
+                        <span class="stat-label">Unavailable</span>
+                    </span>
+                </div>
+            </div>
+
+            <div class="cars-grid">
+                <div *ngFor="let car of filteredCars" class="car-card">
+                    <div class="car-image">
+                        <img [src]="car.image" [alt]="car.title">
+                        <div class="car-status" [class]="car.status.toLowerCase()">
+                            {{ car.status }}
+                        </div>
+                    </div>
+                    <div class="car-info">
+                        <h4>{{ car.title }}</h4>
+                        <p class="car-rate">{{ formatCurrency(car.rate) }}/day</p>
+                        <p class="car-views">{{ car.views }} views</p>
+                        <p class="car-updated">Updated {{ formatDate(car.lastUpdated) }}</p>
+                    </div>
+                    <div class="car-actions">
+                        <button class="btn btn-sm btn-outline" (click)="viewCarDetails(car)">
+                            View
+                        </button>
+                        <button class="btn btn-sm btn-primary" (click)="editCarListing(car.id)">
+                            Edit
+                        </button>
+                        <button class="btn btn-sm" [class]="car.status === 'Available' ? 'btn-danger' : 'btn-success'"
+                            (click)="toggleCarStatus(car.id)">
+                            {{ car.status === 'Available' ? 'Disable' : 'Enable' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Earnings Chart Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3>Monthly Earnings</h3>
+                <div class="chart-controls">
+                    <button class="btn btn-sm btn-outline" (click)="selectedMonth = null">
+                        Clear Selection
+                    </button>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <div class="chart-bars">
+                    <div *ngFor="let earning of monthlyEarnings" class="chart-bar"
+                        [style.height.px]="getBarHeight(earning.revenue)"
+                        [style.background-color]="getBarColor(earning.revenue)"
+                        [class.selected]="isBarSelected(earning.month)" (click)="onBarClick(earning.month)">
+                        <div class="bar-tooltip">
+                            <strong>{{ earning.month }}</strong>
+                            <br>{{ formatCurrency(earning.revenue) }}
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-labels">
+                    <span *ngFor="let earning of monthlyEarnings" class="chart-label">
+                        {{ earning.month }}
+                    </span>
+                </div>
+            </div>
+
+            <div class="chart-summary" *ngIf="selectedMonth">
+                <h4>Selected: {{ selectedMonth }}</h4>
+                <p>Revenue: {{ getSelectedMonthRevenue() }}</p>
+            </div>
+        </div>
+
+        <!-- Pending Requests Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3>Pending Booking Requests ({{ pendingRequests.length }})</h3>
+            </div>
+
+            <div class="requests-list">
+                <div *ngFor="let request of pendingRequests" class="request-card">
+                    <div class="request-header">
+                        <div class="request-info">
+                            <h4>{{ request.renterName }}</h4>
+                            <p>{{ request.carTitle }}</p>
+                            <p class="request-dates">
+                                {{ formatDate(request.pickupDate) }} - {{ formatDate(request.returnDate) }}
+                            </p>
+                        </div>
+                        <div class="request-earnings">
+                            <strong>{{ formatCurrency(request.earnings) }}</strong>
+                        </div>
+                    </div>
+
+                    <div class="request-details">
+                        <div class="contact-info">
+                            <p><strong>Phone:</strong> {{ request.renterPhone }}</p>
+                            <p><strong>Email:</strong> {{ request.renterEmail }}</p>
+                        </div>
+                    </div>
+
+                    <div class="request-actions">
+                        <button class="btn btn-success" (click)="acceptBooking(request.id)">
+                            ✓ Accept
+                        </button>
+                        <button class="btn btn-danger" (click)="declineBooking(request.id)">
+                            ✗ Decline
+                        </button>
+                        <button class="btn btn-outline" (click)="viewBookingDetails(request)">
+                            View Details
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <h3>Quick Actions</h3>
+            </div>
+
+            <div class="quick-actions">
+                <button class="action-card" (click)="handleQuickAction('add-car')">
+                    <div class="action-icon">🚗</div>
+                    <div class="action-content">
+                        <h4>Add New Car</h4>
+                        <p>List a new vehicle for rent</p>
+                    </div>
+                </button>
+
+                <button class="action-card" (click)="handleQuickAction('update-calendar')">
+                    <div class="action-icon">📅</div>
+                    <div class="action-content">
+                        <h4>Update Calendar</h4>
+                        <p>Manage availability</p>
+                    </div>
+                </button>
+
+                <button class="action-card" (click)="handleQuickAction('view-all-bookings')">
+                    <div class="action-icon">📋</div>
+                    <div class="action-content">
+                        <h4>View All Bookings</h4>
+                        <p>See complete booking history</p>
+                    </div>
+                </button>
+
+                <button class="action-card" (click)="handleQuickAction('export-data')">
+                    <div class="action-icon">📊</div>
+                    <div class="action-content">
+                        <h4>Export Data</h4>
+                        <p>Download dashboard data</p>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Booking Details Modal -->
+<div class="modal-overlay" *ngIf="showBookingDetails" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3>Booking Details</h3>
+            <button class="modal-close" (click)="closeModal()">×</button>
+        </div>
+
+        <div class="modal-body" *ngIf="selectedBooking">
+            <div class="detail-section">
+                <h4>Renter Information</h4>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <label>Name:</label>
+                        <span>{{ selectedBooking.renterName }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Phone:</label>
+                        <span>{{ selectedBooking.renterPhone }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Email:</label>
+                        <span>{{ selectedBooking.renterEmail }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="detail-section">
+                <h4>Booking Information</h4>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <label>Car:</label>
+                        <span>{{ selectedBooking.carTitle }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Pickup Date:</label>
+                        <span>{{ formatDateTime(selectedBooking.pickupDate) }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Return Date:</label>
+                        <span>{{ formatDateTime(selectedBooking.returnDate) }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Duration:</label>
+                        <span>{{ (selectedBooking.returnDate.getTime() - selectedBooking.pickupDate.getTime()) / (1000 *
+                            60 * 60 * 24) }} days</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Status:</label>
+                        <span class="status-badge" [class]="getStatusColor(selectedBooking.status)">
+                            {{ selectedBooking.status }}
+                        </span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Earnings:</label>
+                        <span class="earnings">{{ formatCurrency(selectedBooking.earnings) }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-outline" (click)="closeModal()">Close</button>
+            <button class="btn btn-primary" *ngIf="selectedBooking?.status === 'Pending'">
+                Contact Renter
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Car Details Modal -->
+<div class="modal-overlay" *ngIf="showCarDetails" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3>Car Details</h3>
+            <button class="modal-close" (click)="closeModal()">×</button>
+        </div>
+
+        <div class="modal-body" *ngIf="selectedCar">
+            <div class="car-detail-image">
+                <img [src]="selectedCar.image" [alt]="selectedCar.title">
+            </div>
+
+            <div class="detail-section">
+                <h4>Car Information</h4>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <label>Title:</label>
+                        <span>{{ selectedCar.title }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Daily Rate:</label>
+                        <span>{{ formatCurrency(selectedCar.rate) }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Status:</label>
+                        <span class="status-badge" [class]="selectedCar.status.toLowerCase()">
+                            {{ selectedCar.status }}
+                        </span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Views:</label>
+                        <span>{{ selectedCar.views }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Last Updated:</label>
+                        <span>{{ formatDateTime(selectedCar.lastUpdated) }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-outline" (click)="closeModal()">Close</button>
+            <button class="btn btn-primary" (click)="editCarListing(selectedCar?.id || '')">
+                Edit Car
+            </button>
+            <button class="btn" [class]="selectedCar?.status === 'Available' ? 'btn-danger' : 'btn-success'"
+                (click)="toggleCarStatus(selectedCar?.id || '')">
+                {{ selectedCar?.status === 'Available' ? 'Disable' : 'Enable' }}
+            </button>
+            <button class="btn btn-secondary" (click)="simulateEditForm()">
+                Open Edit Form
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Car Form Modal -->
+<div class="modal-overlay" *ngIf="showEditForm" (click)="cancelEdit()">
+    <div class="modal-content edit-form-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3>Edit Car Details</h3>
+            <button class="modal-close" (click)="cancelEdit()">×</button>
+        </div>
+
+        <div class="modal-body">
+            <form (ngSubmit)="saveCarEdit()" #editForm="ngForm">
+                <div class="form-group">
+                    <label for="carTitle">Car Title *</label>
+                    <input type="text" id="carTitle" name="carTitle" [(ngModel)]="editFormData.title" required
+                        class="form-control" placeholder="Enter car title">
+                </div>
+
+                <div class="form-group">
+                    <label for="carRate">Daily Rate (₦) *</label>
+                    <input type="number" id="carRate" name="carRate" [(ngModel)]="editFormData.rate" required min="1000"
+                        class="form-control" placeholder="Enter daily rate">
+                </div>
+
+                <div class="form-group">
+                    <label for="carStatus">Status *</label>
+                    <select id="carStatus" name="carStatus" [(ngModel)]="editFormData.status" required
+                        class="form-control">
+                        <option value="Available">Available</option>
+                        <option value="Unavailable">Unavailable</option>
+                    </select>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-outline" (click)="cancelEdit()">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary" [disabled]="!editForm.valid">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
