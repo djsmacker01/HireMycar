@@ -1,0 +1,718 @@
+<div class="dashboard-container">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="header-left">
+            <h1>Renter Dashboard</h1>
+            <p class="subtitle">Manage your bookings, rentals, and favorites</p>
+            <small class="last-update" *ngIf="lastUpdate">
+                Last updated: {{ formatDateTime(lastUpdate) }}
+            </small>
+        </div>
+        <div class="header-right">
+            <div class="search-container">
+                <input type="text" placeholder="Search rentals, cars..." [(ngModel)]="searchTerm" class="search-input">
+                <button class="search-btn">🔍</button>
+            </div>
+            <button class="btn btn-primary" (click)="findCar()" [disabled]="isDataLoading">
+                <span>🚗</span> Find a Car
+            </button>
+            <button class="btn btn-secondary" (click)="refreshData()" [disabled]="isDataLoading">
+                <span *ngIf="!isRefreshing">🔄</span>
+                <span *ngIf="isRefreshing" class="spinner">⏳</span>
+                Refresh
+            </button>
+            <button class="btn btn-outline" (click)="toggleAdvancedSearch()">
+                <span>⚙️</span> Advanced
+            </button>
+        </div>
+    </div>
+
+    <!-- Advanced Search Panel -->
+    <div class="advanced-search-panel" *ngIf="showAdvancedSearch">
+        <div class="panel-header">
+            <h3>Advanced Search & Filters</h3>
+            <button class="btn btn-text" (click)="toggleAdvancedSearch()">×</button>
+        </div>
+        <div class="panel-content">
+            <div class="filter-grid">
+                <div class="filter-group">
+                    <label>Date Range:</label>
+                    <select [(ngModel)]="filterOptions.dateRange" class="filter-select">
+                        <option value="all">All Time</option>
+                        <option value="week">Last Week</option>
+                        <option value="month">Last Month</option>
+                        <option value="quarter">Last Quarter</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Amount Range:</label>
+                    <select [(ngModel)]="filterOptions.amountRange" class="filter-select">
+                        <option value="all">All Amounts</option>
+                        <option value="low">Low (₦0 - ₦50k)</option>
+                        <option value="medium">Medium (₦50k - ₦100k)</option>
+                        <option value="high">High (₦100k+)</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Rating:</label>
+                    <select [(ngModel)]="filterOptions.rating" class="filter-select">
+                        <option value="all">All Ratings</option>
+                        <option value="5">5 Stars</option>
+                        <option value="4">4 Stars</option>
+                        <option value="3">3 Stars</option>
+                        <option value="2">2 Stars</option>
+                        <option value="1">1 Star</option>
+                    </select>
+                </div>
+            </div>
+            <div class="panel-actions">
+                <button class="btn btn-outline" (click)="clearAllFilters()">Clear All</button>
+                <button class="btn btn-primary" (click)="toggleAdvancedSearch()">Apply Filters</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification System -->
+    <div class="notification" *ngIf="showNotification" [class]="'notification-' + notificationType">
+        <span class="notification-icon">
+            {{ notificationType === 'success' ? '✓' : notificationType === 'error' ? '✗' : 'ℹ' }}
+        </span>
+        <span class="notification-message">{{ notificationMessage }}</span>
+        <button class="notification-close" (click)="showNotification = false">×</button>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" *ngIf="isDataLoading">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+    </div>
+
+    <!-- Dashboard Stats Cards -->
+    <div class="stats-grid" [class.animate]="animateStats">
+        <div class="stat-card" *ngFor="let stat of [
+      { icon: '📅', value: renterStats.upcoming, label: 'Upcoming Bookings', trend: 'Active', type: 'positive' },
+      { icon: '🚗', value: renterStats.pastRentals, label: 'Past Rentals', trend: 'Completed', type: 'neutral' },
+      { icon: '❤️', value: renterStats.favorites, label: 'Favorite Cars', trend: 'Saved', type: 'positive' },
+      { icon: '💰', value: formatCurrency(renterStats.totalSpent), label: 'Total Spent', trend: 'Lifetime', type: 'neutral' }
+    ]">
+            <div class="stat-icon">{{ stat.icon }}</div>
+            <div class="stat-content">
+                <h3>{{ stat.value }}</h3>
+                <p>{{ stat.label }}</p>
+            </div>
+            <div class="stat-trend" [class]="stat.type">{{ stat.trend }}</div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="dashboard-grid">
+        <!-- Upcoming Bookings Section -->
+        <div class="section-card" [class.animate]="animateCards">
+            <div class="section-header">
+                <h3>Upcoming Bookings ({{ upcomingBookings.length }})</h3>
+                <div class="header-actions">
+                    <button class="btn btn-text" (click)="toggleFilters()">
+                        {{ showFilters ? 'Hide' : 'Show' }} Filters
+                    </button>
+                    <button class="btn btn-text">View All</button>
+                </div>
+            </div>
+
+            <div class="bookings-container">
+                <div class="booking-card" *ngFor="let booking of upcomingBookings; trackBy: trackByBookingId">
+                    <div class="booking-image">
+                        <img [src]="booking.carImage" [alt]="booking.makeModel">
+                        <span class="status-badge" [class]="getStatusColor(booking.status)">
+                            {{ getStatusIcon(booking.status) }} {{ booking.status }}
+                        </span>
+                    </div>
+                    <div class="booking-details">
+                        <h4>{{ booking.makeModel }}</h4>
+                        <div class="booking-info">
+                            <div class="info-item">
+                                <span class="label">📅 Dates:</span>
+                                <span>{{ formatDate(booking.pickupDate) }} - {{ formatDate(booking.returnDate) }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">📍 Pickup:</span>
+                                <span>{{ booking.pickupLocation }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">👤 Host:</span>
+                                <span>{{ booking.hostName }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">💰 Amount:</span>
+                                <span class="amount">{{ formatCurrency(booking.amount) }}</span>
+                            </div>
+                        </div>
+                        <div class="booking-actions">
+                            <button class="btn btn-primary" (click)="contactHost(booking)">
+                                📞 Contact Host
+                            </button>
+                            <button class="btn btn-outline"
+                                (click)="showBookingDetails = true; selectedBooking = booking">
+                                📋 Details
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Rental History Section -->
+        <div class="section-card" [class.animate]="animateTable">
+            <div class="section-header">
+                <h3>Rental History ({{ filteredRentalHistory.length }})</h3>
+                <div class="header-actions">
+                    <select [(ngModel)]="selectedStatus" class="filter-select">
+                        <option value="all">All Status</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
+                    <select [(ngModel)]="sortBy" class="filter-select">
+                        <option value="date">Date</option>
+                        <option value="amount">Amount</option>
+                        <option value="duration">Duration</option>
+                        <option value="rating">Rating</option>
+                    </select>
+                    <button class="btn btn-icon" (click)="sortOrder = sortOrder === 'asc' ? 'desc' : 'asc'">
+                        {{ sortOrder === 'asc' ? '↑' : '↓' }}
+                    </button>
+                    <button class="btn btn-outline" (click)="openExportModal()">
+                        📊 Export
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Car</th>
+                            <th>Rental Dates</th>
+                            <th>Duration</th>
+                            <th>Amount Paid</th>
+                            <th>Rating</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let rental of paginatedRentals; trackBy: trackByRentalId" class="table-row">
+                            <td>
+                                <div class="car-info">
+                                    <img [src]="rental.carImage" [alt]="rental.car" class="car-thumbnail">
+                                    <div>
+                                        <strong>{{ rental.car }}</strong>
+                                        <small>{{ rental.hostName }}</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="date-info">
+                                    <div>{{ formatDate(rental.dates.start) }} - {{ formatDate(rental.dates.end) }}</div>
+                                    <small>{{ rental.duration }} days</small>
+                                </div>
+                            </td>
+                            <td>{{ rental.duration }} days</td>
+                            <td class="amount">{{ formatCurrency(rental.amountPaid) }}</td>
+                            <td>
+                                <div class="rating-display" *ngIf="rental.rating; else noRating">
+                                    <span class="stars">
+                                        <span *ngFor="let star of [1,2,3,4,5]"
+                                            [class.filled]="star <= rental.rating">★</span>
+                                    </span>
+                                    <small>{{ rental.rating }}/5</small>
+                                </div>
+                                <ng-template #noRating>
+                                    <span class="no-rating">Not Rated</span>
+                                </ng-template>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn btn-sm btn-outline"
+                                        *ngIf="rental.status === 'Completed' && !rental.rating"
+                                        (click)="openRatingModal(rental)">
+                                        Rate & Review
+                                    </button>
+                                    <button class="btn btn-sm btn-primary"
+                                        *ngIf="rental.status === 'Completed' && rental.rating" disabled>
+                                        Rated ✓
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination" *ngIf="totalPages > 1">
+                <button class="btn btn-sm btn-outline" [disabled]="currentPage === 1"
+                    (click)="changePage(currentPage - 1)">
+                    ← Previous
+                </button>
+                <span class="page-info">
+                    Page {{ currentPage }} of {{ totalPages }}
+                </span>
+                <button class="btn btn-sm btn-outline" [disabled]="currentPage === totalPages"
+                    (click)="changePage(currentPage + 1)">
+                    Next →
+                </button>
+            </div>
+        </div>
+
+        <!-- Favorite Cars Section -->
+        <div class="section-card" [class.animate]="animateCards">
+            <div class="section-header">
+                <h3>Favorite Cars ({{ favoriteCars.length }})</h3>
+                <button class="btn btn-text">View All</button>
+            </div>
+
+            <div class="favorites-grid">
+                <div class="favorite-card" *ngFor="let car of favoriteCars; trackBy: trackByCarId">
+                    <div class="favorite-image">
+                        <img [src]="car.image" [alt]="car.title">
+                        <button class="remove-btn" (click)="removeFromFavorites(car.id)">
+                            ❌
+                        </button>
+                    </div>
+                    <div class="favorite-details">
+                        <h4>{{ car.title }}</h4>
+                        <div class="car-info">
+                            <div class="info-item">
+                                <span class="label">👤 Host:</span>
+                                <span>{{ car.hostName }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">📍 Location:</span>
+                                <span>{{ car.location }}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">⭐ Rating:</span>
+                                <span>{{ car.rating }}/5</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="label">💰 Daily Rate:</span>
+                                <span class="amount">{{ formatCurrency(car.dailyRate) }}</span>
+                            </div>
+                        </div>
+                        <div class="favorite-actions">
+                            <button class="btn btn-primary" (click)="bookAgain(car)">
+                                🚗 Book Again
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Feed Section -->
+        <div class="section-card" [class.animate]="animateCards">
+            <div class="section-header">
+                <h3>Recent Activity</h3>
+                <button class="btn btn-text">View All</button>
+            </div>
+
+            <div class="activity-feed">
+                <div class="activity-item" *ngFor="let activity of activityFeed; trackBy: trackByActivityId">
+                    <div class="activity-icon">{{ activity.icon }}</div>
+                    <div class="activity-content">
+                        <div class="activity-message">{{ activity.message }}</div>
+                        <div class="activity-time">{{ formatDateTime(activity.timestamp) }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions Section -->
+        <div class="section-card" [class.animate]="animateCards">
+            <div class="section-header">
+                <h3>Quick Actions</h3>
+            </div>
+
+            <div class="quick-actions">
+                <button class="quick-action-btn" (click)="findCar()" [disabled]="isDataLoading">
+                    <div class="action-icon">🚗</div>
+                    <div class="action-label">Find a Car</div>
+                </button>
+                <button class="quick-action-btn" (click)="viewPaymentHistory()">
+                    <div class="action-icon">💳</div>
+                    <div class="action-label">Payment History</div>
+                </button>
+                <button class="quick-action-btn" (click)="updateProfile()">
+                    <div class="action-icon">👤</div>
+                    <div class="action-label">Update Profile</div>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rating Modal -->
+<div class="modal-overlay" *ngIf="showRatingModal" (click)="cancelRating()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3>Rate & Review</h3>
+            <button class="modal-close" (click)="cancelRating()">×</button>
+        </div>
+        <div class="modal-body" *ngIf="selectedRental">
+            <div class="rental-info">
+                <img [src]="selectedRental.carImage" [alt]="selectedRental.car" class="rental-thumbnail">
+                <div>
+                    <h4>{{ selectedRental.car }}</h4>
+                    <p>{{ formatDate(selectedRental.dates.start) }} - {{ formatDate(selectedRental.dates.end) }}</p>
+                </div>
+            </div>
+
+            <div class="rating-section">
+                <label>Your Rating:</label>
+                <div class="star-rating">
+                    <span *ngFor="let star of [1,2,3,4,5]; let i = index" [class.filled]="i < ratingValue"
+                        (click)="ratingValue = i + 1" class="star">★</span>
+                </div>
+                <small>{{ ratingValue }}/5 stars</small>
+            </div>
+
+            <div class="comment-section">
+                <label>Additional Comments (Optional):</label>
+                <textarea [(ngModel)]="ratingComment" placeholder="Share your experience with this car and host..."
+                    rows="3"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" (click)="cancelRating()">Cancel</button>
+            <button class="btn btn-primary" [disabled]="ratingValue === 0 || isLoading" (click)="submitRating()">
+                <span *ngIf="!isLoading">Submit Review</span>
+                <span *ngIf="isLoading">Submitting...</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Contact Modal -->
+<div class="modal-overlay" *ngIf="showContactModal" (click)="showContactModal = false">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3>Contact Host</h3>
+            <button class="modal-close" (click)="showContactModal = false">×</button>
+        </div>
+        <div class="modal-body" *ngIf="selectedBooking">
+            <div class="contact-info">
+                <h4>{{ selectedBooking.makeModel }}</h4>
+                <p><strong>Host:</strong> {{ selectedBooking.hostName }}</p>
+                <p><strong>Phone:</strong> {{ selectedBooking.hostPhone }}</p>
+                <p><strong>Pickup:</strong> {{ selectedBooking.pickupLocation }}</p>
+            </div>
+
+            <div class="message-section">
+                <label>Your Message:</label>
+                <textarea [(ngModel)]="contactMessage" placeholder="Type your message to the host..."
+                    rows="4"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" (click)="showContactModal = false">Cancel</button>
+            <button class="btn btn-primary" [disabled]="!contactMessage.trim()" (click)="sendMessage()">
+                Send Message
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Export Modal -->
+<div class="modal-overlay" *ngIf="showExportModal" (click)="showExportModal = false">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3>Export Data</h3>
+            <button class="modal-close" (click)="showExportModal = false">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="export-options">
+                <label>Export Format:</label>
+                <select [(ngModel)]="exportFormat" class="filter-select">
+                    <option value="pdf">PDF</option>
+                    <option value="csv">CSV</option>
+                    <option value="excel">Excel</option>
+                </select>
+            </div>
+
+            <div class="export-preview">
+                <h4>Preview:</h4>
+                <p>Rental History: {{ filteredRentalHistory.length }} records</p>
+                <p>Date Range: All time</p>
+                <p>Format: {{ exportFormat.toUpperCase() }}</p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" (click)="showExportModal = false">Cancel</button>
+            <button class="btn btn-primary" [disabled]="isLoading" (click)="exportData()">
+                <span *ngIf="!isLoading">Export Data</span>
+                <span *ngIf="isLoading">Exporting...</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-overlay" *ngIf="showDeleteConfirm" (click)="cancelDelete()">
+    <div class="modal-content delete-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3>Confirm Delete</h3>
+            <button class="modal-close" (click)="cancelDelete()">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="delete-warning">
+                <div class="warning-icon">⚠️</div>
+                <h4>Are you sure?</h4>
+                <p *ngIf="deleteType === 'favorite'">
+                    This will remove the car from your favorites. This action cannot be undone.
+                </p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" (click)="cancelDelete()">Cancel</button>
+            <button class="btn btn-danger" (click)="confirmDelete()">
+                Delete
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Payment History Modal -->
+<div class="modal-overlay" *ngIf="showPaymentHistory" (click)="closePaymentHistory()">
+    <div class="modal-content payment-history-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3>Payment History</h3>
+            <button class="modal-close" (click)="closePaymentHistory()">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="payment-filters">
+                <div class="filter-group">
+                    <label>Filter by Type:</label>
+                    <select [(ngModel)]="paymentHistoryFilter" class="filter-select">
+                        <option value="all">All Transactions</option>
+                        <option value="Payment">Payments</option>
+                        <option value="Refund">Refunds</option>
+                        <option value="Deposit">Deposits</option>
+                        <option value="Withdrawal">Withdrawals</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Sort by:</label>
+                    <select [(ngModel)]="paymentHistorySortBy" class="filter-select">
+                        <option value="date">Date</option>
+                        <option value="amount">Amount</option>
+                        <option value="type">Type</option>
+                    </select>
+                    <button class="btn btn-icon"
+                        (click)="paymentHistorySortOrder = paymentHistorySortOrder === 'asc' ? 'desc' : 'asc'">
+                        {{ paymentHistorySortOrder === 'asc' ? '↑' : '↓' }}
+                    </button>
+                </div>
+            </div>
+
+            <div class="payment-summary">
+                <div class="summary-card">
+                    <h4>Total Spent</h4>
+                    <p class="amount positive">{{ formatCurrency(totalPayments) }}</p>
+                </div>
+                <div class="summary-card">
+                    <h4>Total Refunds</h4>
+                    <p class="amount negative">{{ formatCurrency(totalRefunds) }}</p>
+                </div>
+                <div class="summary-card">
+                    <h4>Net Amount</h4>
+                    <p class="amount">{{ formatCurrency(netAmount) }}</p>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Status</th>
+                            <th>Reference</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let payment of filteredPaymentHistory; trackBy: trackByPaymentId" class="table-row">
+                            <td>{{ formatDateTime(payment.date) }}</td>
+                            <td>{{ payment.description }}</td>
+                            <td>
+                                <span class="payment-type">
+                                    {{ getPaymentTypeIcon(payment.type) }} {{ payment.type }}
+                                </span>
+                            </td>
+                            <td class="amount" [class.negative]="payment.amount < 0">
+                                {{ formatCurrency(Math.abs(payment.amount)) }}
+                            </td>
+                            <td>
+                                <span class="status-badge" [class]="getPaymentStatusColor(payment.status)">
+                                    {{ payment.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <small>{{ payment.reference }}</small>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" (click)="closePaymentHistory()">Close</button>
+            <button class="btn btn-primary" (click)="openExportModal()">
+                📊 Export History
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Profile Update Modal -->
+<div class="modal-overlay" *ngIf="showProfileModal" (click)="closeProfileModal()">
+    <div class="modal-content profile-modal" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3>Update Profile</h3>
+            <button class="modal-close" (click)="closeProfileModal()">×</button>
+        </div>
+        <div class="modal-body" *ngIf="editingProfile">
+            <div class="profile-header">
+                <img [src]="editingProfile.profileImage" [alt]="editingProfile.firstName" class="profile-image">
+                <div class="profile-info">
+                    <h4>{{ editingProfile.firstName }} {{ editingProfile.lastName }}</h4>
+                    <p>{{ editingProfile.email }}</p>
+                </div>
+            </div>
+
+            <div class="profile-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>First Name</label>
+                        <input type="text" [(ngModel)]="profileFormData.firstName" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Last Name</label>
+                        <input type="text" [(ngModel)]="profileFormData.lastName" class="form-input">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" [(ngModel)]="profileFormData.email" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone</label>
+                        <input type="tel" [(ngModel)]="profileFormData.phone" class="form-input">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Address</label>
+                    <input type="text" [(ngModel)]="profileFormData.address" class="form-input">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>City</label>
+                        <input type="text" [(ngModel)]="profileFormData.city" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label>State</label>
+                        <input type="text" [(ngModel)]="profileFormData.state" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label>ZIP Code</label>
+                        <input type="text" [(ngModel)]="profileFormData.zipCode" class="form-input">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Date of Birth</label>
+                        <input type="date" [(ngModel)]="profileFormData.dateOfBirth" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label>License Number</label>
+                        <input type="text" [(ngModel)]="profileFormData.licenseNumber" class="form-input">
+                    </div>
+                </div>
+
+                <div class="preferences-section">
+                    <h4>Preferences</h4>
+                    <div class="preferences-grid">
+                        <div class="preference-item">
+                            <label class="checkbox-label">
+                                <input type="checkbox" [(ngModel)]="profileFormData.preferences.notifications">
+                                <span>Push Notifications</span>
+                            </label>
+                        </div>
+                        <div class="preference-item">
+                            <label class="checkbox-label">
+                                <input type="checkbox" [(ngModel)]="profileFormData.preferences.emailUpdates">
+                                <span>Email Updates</span>
+                            </label>
+                        </div>
+                        <div class="preference-item">
+                            <label class="checkbox-label">
+                                <input type="checkbox" [(ngModel)]="profileFormData.preferences.smsUpdates">
+                                <span>SMS Updates</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" (click)="closeProfileModal()">Cancel</button>
+            <button class="btn btn-outline" (click)="openPasswordModal()">
+                🔐 Change Password
+            </button>
+            <button class="btn btn-primary" [disabled]="isLoading" (click)="saveProfile()">
+                <span *ngIf="!isLoading">Save Changes</span>
+                <span *ngIf="isLoading">Saving...</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Password Change Modal -->
+<div class="modal-overlay" *ngIf="showPasswordModal" (click)="closePasswordModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h3>Change Password</h3>
+            <button class="modal-close" (click)="closePasswordModal()">×</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Current Password</label>
+                <input type="password" [(ngModel)]="passwordData.currentPassword" class="form-input">
+            </div>
+            <div class="form-group">
+                <label>New Password</label>
+                <input type="password" [(ngModel)]="passwordData.newPassword" class="form-input">
+                <small>Must be at least 8 characters long</small>
+            </div>
+            <div class="form-group">
+                <label>Confirm New Password</label>
+                <input type="password" [(ngModel)]="passwordData.confirmPassword" class="form-input">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" (click)="closePasswordModal()">Cancel</button>
+            <button class="btn btn-primary"
+                [disabled]="!passwordData.newPassword || !passwordData.confirmPassword || isLoading"
+                (click)="changePassword()">
+                <span *ngIf="!isLoading">Change Password</span>
+                <span *ngIf="isLoading">Changing...</span>
+            </button>
+        </div>
+    </div>
+</div>
