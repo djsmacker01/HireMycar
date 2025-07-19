@@ -1,0 +1,203 @@
+<div class="messaging-container">
+    <!-- Left Panel - Conversation List -->
+    <div class="conversation-panel">
+        <div class="conversation-header">
+            <h2>Messages</h2>
+            <div class="search-container">
+                <input type="text" placeholder="Search conversations..." [(ngModel)]="chatState.searchQuery"
+                    class="search-input">
+                <span class="search-icon">🔍</span>
+            </div>
+        </div>
+
+        <div class="conversation-list">
+            <div *ngFor="let conversation of filteredConversations; trackBy: trackByConversationId"
+                class="conversation-item" [class.active]="conversation.id === chatState.activeConversationId"
+                (click)="selectConversation(conversation.id)">
+
+                <div class="conversation-avatar">
+                    <img [src]="conversation.user.avatarUrl" [alt]="conversation.user.name">
+                    <div class="online-status" [class.online]="conversation.user.isOnline"></div>
+                </div>
+
+                <div class="conversation-content">
+                    <div class="conversation-header">
+                        <h4 class="conversation-name">{{ conversation.user.name }}</h4>
+                        <span class="conversation-time">{{ formatTimestamp(conversation.lastMessage.timestamp) }}</span>
+                    </div>
+
+                    <div class="conversation-preview">
+                        <div class="car-title" *ngIf="conversation.carTitle">{{ conversation.carTitle }}</div>
+                        <div class="message-preview">
+                            <span class="message-icon" *ngIf="conversation.lastMessage.type === 'image'">📷</span>
+                            <span class="message-icon" *ngIf="conversation.lastMessage.type === 'system'">🔔</span>
+                            <span class="message-text">{{ conversation.lastMessage.content }}</span>
+                        </div>
+                    </div>
+
+                    <div class="conversation-footer">
+                        <div class="message-status" *ngIf="conversation.lastMessage.senderId === currentUserId">
+                            <span [class]="getStatusColor(conversation.lastMessage.status)">
+                                {{ getStatusIcon(conversation.lastMessage.status) }}
+                            </span>
+                        </div>
+                        <div class="unread-badge" *ngIf="conversation.unreadCount > 0">
+                            {{ conversation.unreadCount }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Panel - Chat View -->
+    <div class="chat-panel" *ngIf="activeConversation">
+        <!-- Chat Header -->
+        <div class="chat-header">
+            <div class="chat-user-info">
+                <div class="chat-avatar">
+                    <img [src]="activeConversation.user.avatarUrl" [alt]="activeConversation.user.name">
+                    <div class="online-status" [class.online]="activeConversation.user.isOnline"></div>
+                </div>
+                <div class="chat-details">
+                    <h3 class="chat-name">{{ activeConversation.user.name }}</h3>
+                    <div class="chat-subtitle">
+                        <span class="online-text" *ngIf="activeConversation.user.isOnline">Online</span>
+                        <span class="car-title" *ngIf="activeConversation.carTitle">{{ activeConversation.carTitle
+                            }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-actions">
+                <button class="btn btn-icon" title="More options">⋮</button>
+            </div>
+        </div>
+
+        <!-- Messages Container -->
+        <div class="messages-container" #messageContainer>
+            <div class="messages-list">
+                <div *ngFor="let message of activeConversation.messages; let i = index; trackBy: trackByMessageId"
+                    class="message-wrapper" [class.own-message]="isOwnMessage(message)">
+
+                    <!-- Date Separator -->
+                    <div class="date-separator" *ngIf="shouldShowDateSeparator(message, i)">
+                        <span class="date-text">{{ getDateSeparatorText(message.timestamp) }}</span>
+                    </div>
+
+                    <!-- Message Bubble -->
+                    <div class="message-bubble" [class]="'message-' + message.type">
+                        <div class="message-content">
+                            <!-- Text Message -->
+                            <div class="message-text" *ngIf="message.type === 'text'">
+                                {{ message.content }}
+                            </div>
+
+                            <!-- Image Message -->
+                            <div class="message-image" *ngIf="message.type === 'image'">
+                                <img [src]="message.imageUrl" [alt]="message.content"
+                                    (click)="openImageModal(message.imageUrl)">
+                            </div>
+
+                            <!-- System Message -->
+                            <div class="message-system" *ngIf="message.type === 'system'">
+                                <span class="system-icon">🔔</span>
+                                <span class="system-text">{{ message.content }}</span>
+                            </div>
+
+                            <!-- Message Time and Status -->
+                            <div class="message-footer">
+                                <span class="message-time">{{ formatMessageTime(message.timestamp) }}</span>
+                                <span *ngIf="isOwnMessage(message)" class="message-status"
+                                    [class]="getStatusColor(message.status)">
+                                    {{ getStatusIcon(message.status) }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Typing Indicator -->
+                <div class="typing-indicator" *ngIf="chatState.isTyping">
+                    <div class="typing-avatar">
+                        <img [src]="activeConversation.user.avatarUrl" [alt]="activeConversation.user.name">
+                    </div>
+                    <div class="typing-bubble">
+                        <div class="typing-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                        <span class="typing-text">{{ activeConversation.user.name }} is typing...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Message Input -->
+        <div class="message-input-container">
+            <!-- File Preview -->
+            <div class="file-preview" *ngIf="selectedFile">
+                <div class="file-info">
+                    <span class="file-name">{{ selectedFile.name }}</span>
+                    <button class="remove-file" (click)="removeSelectedFile()">×</button>
+                </div>
+            </div>
+
+            <div class="input-wrapper">
+                <div class="input-actions">
+                    <button class="btn btn-icon" (click)="toggleEmojiPicker()" title="Add emoji">
+                        😊
+                    </button>
+                    <label class="btn btn-icon file-input-label" title="Attach photo">
+                        📷
+                        <input type="file" accept="image/*" (change)="onFileSelected($event)" class="file-input">
+                    </label>
+                </div>
+
+                <div class="input-field">
+                    <textarea #messageInput [(ngModel)]="newMessage" placeholder="Type a message..."
+                        class="message-textarea" rows="1" (keydown.enter)="onKeyDown($event)">
+          </textarea>
+                </div>
+
+                <button class="btn btn-send" [disabled]="(!newMessage.trim() && !selectedFile) || isSending"
+                    (click)="sendMessage()">
+                    <span *ngIf="!isSending">📤</span>
+                    <span *ngIf="isSending" class="sending-spinner">⏳</span>
+                </button>
+            </div>
+
+            <!-- Emoji Picker -->
+            <div class="emoji-picker" *ngIf="showEmojiPicker">
+                <div class="emoji-grid">
+                    <button *ngFor="let emoji of ['😊', '👍', '❤️', '🎉', '🚗', '💰', '✅', '❌', '⏰', '📍', '📞', '📧']"
+                        class="emoji-btn" (click)="addEmoji(emoji)">
+                        {{ emoji }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!activeConversation">
+        <div class="empty-content">
+            <div class="empty-icon">💬</div>
+            <h3>Select a conversation</h3>
+            <p>Choose a conversation from the list to start messaging</p>
+        </div>
+    </div>
+
+    <!-- Mobile Back Button -->
+    <button class="mobile-back-btn" *ngIf="activeConversation" (click)="selectConversation('')">
+        ← Back
+    </button>
+</div>
+
+<!-- Image Modal -->
+<div class="image-modal" *ngIf="false" (click)="closeImageModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+        <img [src]="''" alt="Full size image">
+        <button class="modal-close" (click)="closeImageModal()">×</button>
+    </div>
+</div>
