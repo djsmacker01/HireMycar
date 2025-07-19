@@ -1,0 +1,225 @@
+<!-- Main Navigation Header -->
+<header class="navigation-header" [class.scrolled]="isScrolled">
+    <div class="header-container">
+        <!-- Logo Section -->
+        <div class="logo-section">
+            <a routerLink="/" class="logo">
+                <span class="logo-icon">🚗</span>
+                <span class="logo-text">HireMyCar</span>
+                <span class="logo-domain">.com.ng</span>
+            </a>
+        </div>
+
+        <!-- Desktop Navigation -->
+        <nav class="desktop-nav" *ngIf="!isMobileMenuOpen">
+            <ul class="nav-list">
+                <li class="nav-item"
+                    *ngFor="let item of getVisibleNavItems(primaryNavItems); trackBy: trackByNavItemId">
+                    <a [routerLink]="item.path" [routerLinkActive]="'active'" class="nav-link"
+                        [class.has-badge]="item.badge && item.badge > 0">
+                        <span class="nav-icon" *ngIf="item.icon">{{ item.icon }}</span>
+                        <span class="nav-label">{{ item.label }}</span>
+                        <span class="nav-badge" *ngIf="item.badge && item.badge > 0">{{ item.badge }}</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Search Bar -->
+        <div class="search-section" [class.active]="isSearchOpen">
+            <div class="search-container">
+                <input type="text" id="search-input" [(ngModel)]="searchQuery" (keyup.enter)="performSearch()"
+                    placeholder="Search for cars, locations..." class="search-input">
+                <button class="search-btn" (click)="performSearch()">
+                    <span class="search-icon">🔍</span>
+                </button>
+                <button class="search-close" (click)="clearSearch()" *ngIf="isSearchOpen">
+                    <span class="close-icon">×</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- User Actions -->
+        <div class="user-actions">
+            <!-- Guest Actions -->
+            <div class="guest-actions" *ngIf="!userRole.isAuthenticated">
+                <button class="action-btn secondary" (click)="login()">
+                    <span class="action-icon">👤</span>
+                    <span class="action-text">Login</span>
+                </button>
+                <button class="action-btn primary">
+                    <span class="action-icon">🚗</span>
+                    <span class="action-text">Sign Up</span>
+                </button>
+            </div>
+
+            <!-- Authenticated User Actions -->
+            <div class="authenticated-actions" *ngIf="userRole.isAuthenticated">
+                <!-- Messages -->
+                <a routerLink="/messaging" class="action-btn messages"
+                    [class.has-notifications]="notificationCount.messages > 0">
+                    <span class="action-icon">💬</span>
+                    <span class="notification-badge" *ngIf="notificationCount.messages > 0">
+                        {{ notificationCount.messages }}
+                    </span>
+                </a>
+
+                <!-- User Menu -->
+                <div class="user-menu-container">
+                    <button class="user-menu-trigger" (click)="toggleUserMenu()">
+                        <div class="user-avatar">
+                            <img [src]="currentUser?.avatar" [alt]="currentUser?.name" *ngIf="currentUser?.avatar">
+                            <span class="avatar-fallback" *ngIf="!currentUser?.avatar">
+                                {{ getUserDisplayName().charAt(0) }}
+                            </span>
+                            <span class="online-indicator" [class.online]="currentUser?.isOnline"></span>
+                        </div>
+                        <span class="user-name">{{ getUserDisplayName() }}</span>
+                        <span class="dropdown-arrow">▼</span>
+                    </button>
+
+                    <!-- User Dropdown Menu -->
+                    <div class="user-dropdown" [class.active]="isUserMenuOpen">
+                        <div class="dropdown-header">
+                            <div class="user-info">
+                                <div class="user-avatar">
+                                    <img [src]="currentUser?.avatar" [alt]="currentUser?.name"
+                                        *ngIf="currentUser?.avatar">
+                                    <span class="avatar-fallback" *ngIf="!currentUser?.avatar">
+                                        {{ getUserDisplayName().charAt(0) }}
+                                    </span>
+                                </div>
+                                <div class="user-details">
+                                    <span class="user-full-name">{{ currentUser?.name }}</span>
+                                    <span class="user-role">{{ getUserRoleLabel() }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dropdown-menu">
+                            <a class="menu-item" *ngFor="let item of userMenuItems; trackBy: trackByMenuItemId"
+                                (click)="item.action()">
+                                <span class="menu-icon">{{ item.icon }}</span>
+                                <span class="menu-label">{{ item.label }}</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle" (click)="toggleMobileMenu()">
+                <span class="hamburger-line" [class.active]="isMobileMenuOpen"></span>
+                <span class="hamburger-line" [class.active]="isMobileMenuOpen"></span>
+                <span class="hamburger-line" [class.active]="isMobileMenuOpen"></span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Mobile Navigation Overlay -->
+    <div class="mobile-nav-overlay" [class.active]="isMobileMenuOpen" (click)="closeAllMenus()">
+        <div class="mobile-nav-content" (click)="$event.stopPropagation()">
+            <div class="mobile-nav-header">
+                <div class="mobile-logo">
+                    <span class="logo-icon">🚗</span>
+                    <span class="logo-text">HireMyCar</span>
+                </div>
+                <button class="mobile-close" (click)="closeAllMenus()">
+                    <span class="close-icon">×</span>
+                </button>
+            </div>
+
+            <!-- Mobile Search -->
+            <div class="mobile-search">
+                <input type="text" [(ngModel)]="searchQuery" (keyup.enter)="performSearch()"
+                    placeholder="Search for cars..." class="mobile-search-input">
+                <button class="mobile-search-btn" (click)="performSearch()">
+                    <span class="search-icon">🔍</span>
+                </button>
+            </div>
+
+            <!-- Mobile Navigation -->
+            <nav class="mobile-nav">
+                <div class="nav-section">
+                    <h3 class="nav-section-title">Main Menu</h3>
+                    <ul class="mobile-nav-list">
+                        <li class="mobile-nav-item"
+                            *ngFor="let item of getVisibleNavItems(primaryNavItems); trackBy: trackByNavItemId">
+                            <a [routerLink]="item.path" [routerLinkActive]="'active'" class="mobile-nav-link"
+                                (click)="closeAllMenus()">
+                                <span class="nav-icon">{{ item.icon }}</span>
+                                <span class="nav-label">{{ item.label }}</span>
+                                <span class="nav-badge" *ngIf="item.badge && item.badge > 0">{{ item.badge }}</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Authenticated User Menu -->
+                <div class="nav-section" *ngIf="userRole.isAuthenticated">
+                    <h3 class="nav-section-title">My Account</h3>
+                    <ul class="mobile-nav-list">
+                        <li class="mobile-nav-item"
+                            *ngFor="let item of getVisibleNavItems(authenticatedNavItems); trackBy: trackByNavItemId">
+                            <a [routerLink]="item.path" [routerLinkActive]="'active'" class="mobile-nav-link"
+                                (click)="closeAllMenus()">
+                                <span class="nav-icon">{{ item.icon }}</span>
+                                <span class="nav-label">{{ item.label }}</span>
+                                <span class="nav-badge" *ngIf="item.badge && item.badge > 0">{{ item.badge }}</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Guest Actions -->
+                <div class="mobile-guest-actions" *ngIf="!userRole.isAuthenticated">
+                    <button class="mobile-action-btn secondary" (click)="login(); closeAllMenus()">
+                        <span class="action-icon">👤</span>
+                        <span class="action-text">Login</span>
+                    </button>
+                    <button class="mobile-action-btn primary">
+                        <span class="action-icon">🚗</span>
+                        <span class="action-text">Sign Up</span>
+                    </button>
+                </div>
+
+                <!-- Authenticated User Actions -->
+                <div class="mobile-user-actions" *ngIf="userRole.isAuthenticated">
+                    <div class="mobile-user-info">
+                        <div class="mobile-user-avatar">
+                            <img [src]="currentUser?.avatar" [alt]="currentUser?.name" *ngIf="currentUser?.avatar">
+                            <span class="avatar-fallback" *ngIf="!currentUser?.avatar">
+                                {{ getUserDisplayName().charAt(0) }}
+                            </span>
+                        </div>
+                        <div class="mobile-user-details">
+                            <span class="mobile-user-name">{{ currentUser?.name }}</span>
+                            <span class="mobile-user-role">{{ getUserRoleLabel() }}</span>
+                        </div>
+                    </div>
+                    <button class="mobile-logout-btn" (click)="logout(); closeAllMenus()">
+                        <span class="logout-icon">🚪</span>
+                        <span class="logout-text">Logout</span>
+                    </button>
+                </div>
+            </nav>
+        </div>
+    </div>
+</header>
+
+<!-- Breadcrumb Navigation -->
+<div class="breadcrumb-container" *ngIf="breadcrumbItems.length > 1">
+    <div class="breadcrumb-wrapper">
+        <nav class="breadcrumb-nav">
+            <ol class="breadcrumb-list">
+                <li class="breadcrumb-item" *ngFor="let item of breadcrumbItems; trackBy: trackByNavItemId">
+                    <a [routerLink]="item.path" class="breadcrumb-link" [class.active]="isActiveRoute(item.path)">
+                        <span class="breadcrumb-icon" *ngIf="item.icon">{{ item.icon }}</span>
+                        <span class="breadcrumb-text">{{ item.label }}</span>
+                    </a>
+                    <span class="breadcrumb-separator" *ngIf="!isActiveRoute(item.path)">/</span>
+                </li>
+            </ol>
+        </nav>
+    </div>
+</div>
