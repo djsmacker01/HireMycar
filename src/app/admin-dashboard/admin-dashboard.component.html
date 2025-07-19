@@ -1,0 +1,397 @@
+<div class="admin-dashboard-container">
+    <!-- Notification Toast -->
+    <div class="notification-toast" *ngIf="showNotification" [class]="'notification-' + notificationType">
+        <span class="notification-message">{{ notificationMessage }}</span>
+        <button class="notification-close" (click)="showNotification = false">×</button>
+    </div>
+
+    <!-- Enhanced Header -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <h1 class="dashboard-title">Admin Dashboard</h1>
+            <p class="dashboard-subtitle">HireMyCar.com.ng Platform Management</p>
+            <div class="system-status">
+                <span class="status-indicator" [class]="systemHealth">
+                    {{ getSystemHealthIcon() }} System Health: {{ systemHealth | titlecase }}
+                </span>
+                <span class="active-users">
+                    👥 {{ activeUsers }} Active Users
+                </span>
+                <span class="last-update">
+                    🕒 Last Update: {{ lastUpdateTime | date:'HH:mm:ss' }}
+                </span>
+            </div>
+        </div>
+        <div class="header-actions">
+            <button class="action-btn refresh" (click)="refreshData()" [disabled]="isRefreshing"
+                [class.loading]="isRefreshing">
+                {{ isRefreshing ? '🔄 Refreshing...' : '🔄 Refresh' }}
+            </button>
+            <button class="action-btn toggle-updates" (click)="toggleRealTimeUpdates()"
+                [class.active]="showRealTimeUpdates">
+                {{ showRealTimeUpdates ? '⏸️ Pause Updates' : '▶️ Resume Updates' }}
+            </button>
+            <button class="action-btn primary" (click)="exportCSV()" [disabled]="isLoading">
+                {{ isLoading ? 'Exporting...' : 'Export CSV' }}
+            </button>
+            <button class="action-btn secondary" (click)="exportPDF()" [disabled]="isLoading">
+                {{ isLoading ? 'Exporting...' : 'Export PDF' }}
+            </button>
+        </div>
+    </div>
+
+    <!-- Admin Overview Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon users">👥</div>
+            <div class="stat-content">
+                <h3>Total Users</h3>
+                <p class="stat-value">{{ adminStats.totalUsers.toLocaleString() }}</p>
+                <span class="stat-change positive">+12% this month</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon listings">🚗</div>
+            <div class="stat-content">
+                <h3>Active Listings</h3>
+                <p class="stat-value">{{ adminStats.activeListings.toLocaleString() }}</p>
+                <span class="stat-change positive">+8% this month</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon bookings">📅</div>
+            <div class="stat-content">
+                <h3>Monthly Bookings</h3>
+                <p class="stat-value">{{ adminStats.monthlyBookings.toLocaleString() }}</p>
+                <span class="stat-change positive">+15% this month</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon revenue">💰</div>
+            <div class="stat-content">
+                <h3>Total Revenue</h3>
+                <p class="stat-value">{{ formatCurrency(adminStats.totalRevenue) }}</p>
+                <span class="stat-change positive">+22% this month</span>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon commission">💼</div>
+            <div class="stat-content">
+                <h3>Platform Commission</h3>
+                <p class="stat-value">{{ formatCurrency(adminStats.platformCommission) }}</p>
+                <span class="stat-change positive">+18% this month</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Grid -->
+    <div class="dashboard-grid">
+        <!-- User Management Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2>User Management</h2>
+                <div class="section-actions">
+                    <input type="text" [(ngModel)]="searchTerm" placeholder="Search users..." class="search-input">
+                    <select [(ngModel)]="selectedUserType" class="filter-select">
+                        <option value="all">All Types</option>
+                        <option value="Owner">Owners</option>
+                        <option value="Renter">Renters</option>
+                    </select>
+                    <select [(ngModel)]="selectedUserStatus" class="filter-select">
+                        <option value="all">All Status</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Email</th>
+                            <th>Verification</th>
+                            <th>Join Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let user of paginatedUsers; trackBy: trackByUserId">
+                            <td>
+                                <div class="user-info">
+                                    <div class="user-avatar">{{ user.name.charAt(0) }}</div>
+                                    <span class="user-name">{{ user.name }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="user-type" [style.background-color]="getTypeColor(user.type)">
+                                    {{ user.type }}
+                                </span>
+                            </td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                <div class="verification-badges">
+                                    <span class="badge" [class.verified]="user.verified.email">📧</span>
+                                    <span class="badge" [class.verified]="user.verified.phone">📱</span>
+                                    <span class="badge" [class.verified]="user.verified.id">🆔</span>
+                                </div>
+                            </td>
+                            <td>{{ formatDate(user.joinDate) }}</td>
+                            <td>
+                                <span class="status-badge" [class.active]="user.isActive">
+                                    {{ user.isActive ? 'Active' : 'Suspended' }}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="toggle-btn" [class.active]="user.isActive"
+                                    (click)="toggleUserStatus(user)" [disabled]="isLoading">
+                                    {{ user.isActive ? 'Suspend' : 'Activate' }}
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination" *ngIf="totalPages > 1">
+                <button class="page-btn" (click)="changePage(currentPage - 1)" [disabled]="currentPage === 1">
+                    Previous
+                </button>
+                <span class="page-info">Page {{ currentPage }} of {{ totalPages }}</span>
+                <button class="page-btn" (click)="changePage(currentPage + 1)" [disabled]="currentPage === totalPages">
+                    Next
+                </button>
+            </div>
+        </div>
+
+        <!-- Listing Management Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2>Listing Management</h2>
+                <div class="section-actions">
+                    <select [(ngModel)]="selectedListingStatus" class="filter-select">
+                        <option value="all">All Status</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Flagged">Flagged</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="listings-grid">
+                <div class="listing-item" *ngFor="let listing of filteredListings; trackBy: trackByListingId">
+                    <div class="listing-header">
+                        <h4>{{ listing.title }}</h4>
+                        <span class="listing-status" [style.color]="getStatusColor(listing.status)">
+                            {{ getStatusIcon(listing.status) }} {{ listing.status }}
+                        </span>
+                    </div>
+
+                    <div class="listing-details">
+                        <div class="detail-row">
+                            <span class="label">Owner:</span>
+                            <span class="value">{{ listing.owner }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Location:</span>
+                            <span class="value">{{ listing.location }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Car Type:</span>
+                            <span class="value">{{ listing.carType }}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="label">Daily Rate:</span>
+                            <span class="value">{{ formatCurrency(listing.dailyRate) }}</span>
+                        </div>
+                        <div class="detail-row" *ngIf="listing.flaggedReason">
+                            <span class="label">Flagged Reason:</span>
+                            <span class="value flagged">{{ listing.flaggedReason }}</span>
+                        </div>
+                    </div>
+
+                    <div class="listing-actions" *ngIf="listing.status === 'Pending'">
+                        <button class="action-btn approve" (click)="approveListing(listing)" [disabled]="isLoading">
+                            {{ isLoading ? 'Processing...' : 'Approve' }}
+                        </button>
+                        <button class="action-btn reject" (click)="rejectListing(listing)" [disabled]="isLoading">
+                            {{ isLoading ? 'Processing...' : 'Reject' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Overview Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2>Financial Overview</h2>
+            </div>
+
+            <div class="financial-stats">
+                <div class="financial-card">
+                    <h3>Revenue Breakdown</h3>
+                    <div class="breakdown-item">
+                        <span class="label">Renter Payments</span>
+                        <span class="amount">{{ formatCurrency(adminStats.totalRevenue * 0.7) }}</span>
+                    </div>
+                    <div class="breakdown-item">
+                        <span class="label">Host Earnings</span>
+                        <span class="amount">{{ formatCurrency(adminStats.totalRevenue * 0.8) }}</span>
+                    </div>
+                    <div class="breakdown-item highlight">
+                        <span class="label">Platform Commission</span>
+                        <span class="amount">{{ formatCurrency(adminStats.platformCommission) }}</span>
+                    </div>
+                </div>
+
+                <div class="financial-card">
+                    <h3>Payout Requests</h3>
+                    <div class="payout-list">
+                        <div class="payout-item" *ngFor="let payout of payoutRequests; trackBy: trackByPayoutId">
+                            <div class="payout-info">
+                                <span class="host-name">{{ payout.hostName }}</span>
+                                <span class="amount">{{ formatCurrency(payout.amount) }}</span>
+                                <span class="date">{{ formatDate(payout.requestDate) }}</span>
+                                <span class="status" [class]="payout.status.toLowerCase()">
+                                    {{ payout.status }}
+                                </span>
+                            </div>
+                            <div class="payout-actions" *ngIf="payout.status === 'Pending'">
+                                <button class="action-btn approve" (click)="approvePayout(payout)"
+                                    [disabled]="isLoading">
+                                    Approve
+                                </button>
+                                <button class="action-btn reject" (click)="holdPayout(payout)" [disabled]="isLoading">
+                                    Hold
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Platform Health Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2>Platform Health</h2>
+            </div>
+
+            <div class="health-metrics">
+                <div class="metric-card">
+                    <div class="metric-icon">⏱️</div>
+                    <div class="metric-content">
+                        <h4>Avg. Response Time</h4>
+                        <p class="metric-value">{{ platformHealth.avgResponseTime }} hours</p>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">⭐</div>
+                    <div class="metric-content">
+                        <h4>User Satisfaction</h4>
+                        <p class="metric-value" [style.color]="getHealthColor(platformHealth.userSatisfactionScore)">
+                            {{ platformHealth.userSatisfactionScore }}/5.0
+                        </p>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">⚖️</div>
+                    <div class="metric-content">
+                        <h4>Open Disputes</h4>
+                        <p class="metric-value">{{ platformHealth.openDisputes }}</p>
+                    </div>
+                </div>
+
+                <div class="metric-card">
+                    <div class="metric-icon">✅</div>
+                    <div class="metric-content">
+                        <h4>Resolved Disputes</h4>
+                        <p class="metric-value">{{ platformHealth.resolvedDisputes }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions Section -->
+        <div class="section-card">
+            <div class="section-header">
+                <h2>Quick Actions</h2>
+            </div>
+
+            <div class="quick-actions">
+                <div class="action-group">
+                    <h3>Send Notifications</h3>
+                    <div class="notification-templates">
+                        <div class="template-item"
+                            *ngFor="let template of notificationTemplates; trackBy: trackByNotificationId"
+                            (click)="openNotificationModal(template)">
+                            <div class="template-icon" [class]="template.type">{{ template.type === 'info' ? 'ℹ️' :
+                                template.type === 'warning' ? '⚠️' : template.type === 'success' ? '✅' : '❌' }}</div>
+                            <div class="template-content">
+                                <h4>{{ template.title }}</h4>
+                                <p>{{ template.message }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-group">
+                    <h3>Reports & Analytics</h3>
+                    <div class="report-actions">
+                        <button class="action-btn primary" (click)="exportCSV()" [disabled]="isLoading">
+                            {{ isLoading ? 'Generating...' : 'Generate CSV Report' }}
+                        </button>
+                        <button class="action-btn secondary" (click)="exportPDF()" [disabled]="isLoading">
+                            {{ isLoading ? 'Generating...' : 'Generate PDF Report' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Modal -->
+    <div class="modal-overlay" *ngIf="showNotificationModal" (click)="closeNotificationModal()">
+        <div class="modal-content" (click)="$event.stopPropagation()">
+            <div class="modal-header">
+                <h3>Send Notification</h3>
+                <button class="modal-close" (click)="closeNotificationModal()">×</button>
+            </div>
+
+            <div class="modal-body" *ngIf="selectedNotificationTemplate">
+                <div class="notification-preview">
+                    <h4>{{ selectedNotificationTemplate.title }}</h4>
+                    <p>{{ selectedNotificationTemplate.message }}</p>
+                </div>
+
+                <div class="form-group">
+                    <label>Recipients</label>
+                    <select [(ngModel)]="notificationRecipients" class="form-input">
+                        <option value="all">All Users</option>
+                        <option value="owners">Car Owners Only</option>
+                        <option value="renters">Renters Only</option>
+                        <option value="active">Active Users Only</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn-secondary" (click)="closeNotificationModal()">Cancel</button>
+                <button class="btn-primary" (click)="sendNotification()" [disabled]="isLoading">
+                    {{ isLoading ? 'Sending...' : 'Send Notification' }}
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
