@@ -1,0 +1,207 @@
+<div class="booking-confirmation-container">
+    <!-- Loading State -->
+    <div *ngIf="isProcessing" class="loading-overlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Processing your booking...</p>
+        </div>
+    </div>
+
+    <!-- Booking Confirmed State -->
+    <div *ngIf="bookingConfirmed && confirmationData" class="confirmation-success">
+        <div class="success-card">
+            <div class="success-icon">✓</div>
+            <h1>Booking Confirmed!</h1>
+            <p class="confirmation-number">Confirmation: {{ confirmationData.confirmationNumber }}</p>
+
+            <div class="booking-recap">
+                <h3>Booking Summary</h3>
+                <div class="recap-item">
+                    <span class="label">Car:</span>
+                    <span class="value">{{ bookingData?.carName }}</span>
+                </div>
+                <div class="recap-item">
+                    <span class="label">Pickup:</span>
+                    <span class="value">{{ formatDate(bookingData?.pickupDate!) }}</span>
+                </div>
+                <div class="recap-item">
+                    <span class="label">Return:</span>
+                    <span class="value">{{ formatDate(bookingData?.returnDate!) }}</span>
+                </div>
+                <div class="recap-item">
+                    <span class="label">Location:</span>
+                    <span class="value">{{ bookingData?.location }}</span>
+                </div>
+                <div class="recap-item">
+                    <span class="label">Total Paid:</span>
+                    <span class="value">{{ formatCurrency(totalAmount) }}</span>
+                </div>
+            </div>
+
+            <div class="host-info">
+                <h3>Host Information</h3>
+                <div class="host-details">
+                    <p><strong>{{ confirmationData.hostName }}</strong></p>
+                    <p>📞 {{ confirmationData.hostPhone }}</p>
+                    <p>📍 {{ confirmationData.pickupLocation }}</p>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn btn-secondary" (click)="backToDashboard()">
+                    Back to Dashboard
+                </button>
+                <button class="btn btn-primary" (click)="viewBookings()">
+                    View My Bookings
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Booking Form -->
+    <div *ngIf="!bookingConfirmed" class="booking-form-container">
+        <div class="header">
+            <h1>Complete Your Booking</h1>
+            <p>Please review your booking details and provide your information</p>
+        </div>
+
+        <div class="booking-content">
+            <!-- Booking Summary Section -->
+            <div class="booking-summary">
+                <h2>Booking Summary</h2>
+                <div class="car-details">
+                    <img [src]="bookingData?.carImage" [alt]="bookingData?.carName" class="car-image">
+                    <div class="car-info">
+                        <h3>{{ bookingData?.carName }}</h3>
+                        <div class="booking-dates">
+                            <div class="date-item">
+                                <span class="date-label">Pickup</span>
+                                <span class="date-value">{{ formatDate(bookingData?.pickupDate!) }}</span>
+                            </div>
+                            <div class="date-item">
+                                <span class="date-label">Return</span>
+                                <span class="date-value">{{ formatDate(bookingData?.returnDate!) }}</span>
+                            </div>
+                        </div>
+                        <div class="location">
+                            <span class="location-icon">📍</span>
+                            <span>{{ bookingData?.location }}</span>
+                        </div>
+                        <div class="duration">
+                            <span class="duration-label">Duration:</span>
+                            <span class="duration-value">{{ rentalDuration }} day{{ rentalDuration > 1 ? 's' : ''
+                                }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Price Breakdown -->
+            <div class="price-breakdown">
+                <h2>Price Breakdown</h2>
+                <div class="price-item">
+                    <span>Daily Rate ({{ rentalDuration }} days)</span>
+                    <span>{{ formatCurrency(subtotal) }}</span>
+                </div>
+                <div class="price-item">
+                    <span>Service Fee (5%)</span>
+                    <span>{{ formatCurrency(serviceFee) }}</span>
+                </div>
+                <div class="price-item total">
+                    <span>Total Amount</span>
+                    <span>{{ formatCurrency(totalAmount) }}</span>
+                </div>
+            </div>
+
+            <!-- Renter Information Form -->
+            <div class="renter-form">
+                <h2>Renter Information</h2>
+                <form [formGroup]="bookingForm" class="form">
+                    <div class="form-group">
+                        <label for="fullName">Full Name *</label>
+                        <input type="text" id="fullName" formControlName="fullName" placeholder="Enter your full name"
+                            class="form-input">
+                        <div *ngIf="bookingForm.get('fullName')?.invalid && bookingForm.get('fullName')?.touched"
+                            class="error-message">
+                            <span *ngIf="bookingForm.get('fullName')?.errors?.['required']">Full name is required</span>
+                            <span *ngIf="bookingForm.get('fullName')?.errors?.['minlength']">Name must be at least 2
+                                characters</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phoneNumber">Phone Number *</label>
+                        <input type="tel" id="phoneNumber" formControlName="phoneNumber" placeholder="+234 801 234 5678"
+                            class="form-input">
+                        <div *ngIf="bookingForm.get('phoneNumber')?.invalid && bookingForm.get('phoneNumber')?.touched"
+                            class="error-message">
+                            <span *ngIf="bookingForm.get('phoneNumber')?.errors?.['required']">Phone number is
+                                required</span>
+                            <span *ngIf="bookingForm.get('phoneNumber')?.errors?.['pattern']">Please enter a valid
+                                Nigerian phone number</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="driversLicense">Driver's License Number *</label>
+                        <input type="text" id="driversLicense" formControlName="driversLicense"
+                            placeholder="Enter your driver's license number" class="form-input">
+                        <div *ngIf="bookingForm.get('driversLicense')?.invalid && bookingForm.get('driversLicense')?.touched"
+                            class="error-message">
+                            <span *ngIf="bookingForm.get('driversLicense')?.errors?.['required']">Driver's license
+                                number is required</span>
+                            <span *ngIf="bookingForm.get('driversLicense')?.errors?.['minlength']">License number must
+                                be at least 6 characters</span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Payment Method Selection -->
+            <div class="payment-method">
+                <h2>Payment Method</h2>
+                <div class="payment-options">
+                    <div class="payment-option selected">
+                        <div class="payment-radio">
+                            <input type="radio" checked disabled>
+                            <span class="radio-custom"></span>
+                        </div>
+                        <div class="payment-details">
+                            <div class="payment-provider">
+                                <span class="paystack-logo">💳</span>
+                                <span>Card via Paystack</span>
+                            </div>
+                            <div class="payment-security">
+                                <span class="security-icon">🔒</span>
+                                <span>Secure payment processing</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Terms and Conditions -->
+            <div class="terms-section">
+                <div class="terms-checkbox">
+                    <input type="checkbox" id="terms" [checked]="termsAccepted" (change)="onTermsToggle()"
+                        class="checkbox-input">
+                    <label for="terms" class="checkbox-label">
+                        I agree to the <a href="#" class="terms-link">Terms and Conditions</a> and
+                        <a href="#" class="terms-link">Rental Agreement</a>
+                    </label>
+                </div>
+                <div *ngIf="!termsAccepted && bookingForm.touched" class="error-message">
+                    You must accept the terms and conditions to proceed
+                </div>
+            </div>
+
+            <!-- Confirm Booking Button -->
+            <div class="booking-actions">
+                <button class="btn btn-primary btn-large" [disabled]="!isFormValid" (click)="confirmBooking()">
+                    <span *ngIf="!isProcessing">Confirm Booking - {{ formatCurrency(totalAmount) }}</span>
+                    <span *ngIf="isProcessing">Processing...</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
