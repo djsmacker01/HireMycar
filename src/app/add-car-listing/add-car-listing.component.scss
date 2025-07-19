@@ -1,0 +1,686 @@
+// Nigerian Color Scheme
+$primary-red: #dc2626;
+$light-red: #fef2f2;
+$accent-blue: #2563eb;
+$dark-gray: #1f2937;
+$light-gray: #f3f4f6;
+$border-gray: #d1d5db;
+$success-green: #10b981;
+$error-red: #ef4444;
+$warning-yellow: #f59e0b;
+
+// Mixins
+@mixin card-shadow {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+@mixin button-base {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// Main Container
+.add-car-listing-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, $light-red 0%, #ffffff 100%);
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+// Header
+.header {
+  text-align: center;
+  margin-bottom: 40px;
+  
+  h1 {
+    color: $dark-gray;
+    font-size: 32px;
+    margin-bottom: 8px;
+    font-weight: 700;
+  }
+  
+  p {
+    color: #6b7280;
+    font-size: 18px;
+  }
+}
+
+// Progress Bar
+.progress-container {
+  margin-bottom: 32px;
+  
+  .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: $border-gray;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+    
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, $primary-red, $accent-blue);
+      transition: width 0.3s ease;
+    }
+  }
+  
+  .progress-text {
+    text-align: center;
+    color: $dark-gray;
+    font-weight: 600;
+    font-size: 14px;
+  }
+}
+
+// Step Indicators
+.step-indicators {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 40px;
+  gap: 16px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .step-indicator {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: white;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    @include card-shadow;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    
+    &.active {
+      border: 2px solid $accent-blue;
+      background: rgba(37, 99, 235, 0.05);
+    }
+    
+    &.completed {
+      border: 2px solid $success-green;
+      background: rgba(16, 185, 129, 0.05);
+    }
+    
+    .step-number {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: $border-gray;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+    
+    &.active .step-number {
+      background: $accent-blue;
+    }
+    
+    &.completed .step-number {
+      background: $success-green;
+    }
+    
+    .step-info {
+      flex: 1;
+      
+      .step-title {
+        font-weight: 600;
+        color: $dark-gray;
+        margin-bottom: 2px;
+      }
+      
+      .step-description {
+        font-size: 12px;
+        color: #6b7280;
+      }
+    }
+  }
+}
+
+// Draft Notification
+.draft-notification {
+  background: $success-green;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  text-align: center;
+  margin-bottom: 24px;
+  animation: slideIn 0.3s ease;
+  
+  span {
+    font-weight: 500;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Form Container
+.form-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.car-listing-form {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  @include card-shadow;
+  
+  @media (max-width: 768px) {
+    padding: 24px;
+  }
+}
+
+// Step Content
+.step-content {
+  .step-header {
+    text-align: center;
+    margin-bottom: 32px;
+    
+    h2 {
+      color: $dark-gray;
+      font-size: 28px;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+    
+    p {
+      color: #6b7280;
+      font-size: 16px;
+    }
+  }
+}
+
+// Form Grid
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+// Form Groups
+.form-group {
+  .form-input, .form-select {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid $border-gray;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.2s ease;
+    
+    &:focus {
+      outline: none;
+      border-color: $accent-blue;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    
+    &:disabled {
+      background: $light-gray;
+      cursor: not-allowed;
+    }
+  }
+  
+  label {
+    display: block;
+    margin-bottom: 8px;
+    color: $dark-gray;
+    font-weight: 500;
+  }
+  
+  .error-message {
+    color: $error-red;
+    font-size: 14px;
+    margin-top: 4px;
+  }
+}
+
+// Features Section
+.features-section {
+  margin-top: 32px;
+  
+  h3 {
+    color: $dark-gray;
+    margin-bottom: 8px;
+    font-size: 20px;
+  }
+  
+  p {
+    color: #6b7280;
+    margin-bottom: 20px;
+  }
+  
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    
+    .feature-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border: 2px solid $border-gray;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        border-color: $accent-blue;
+        background: rgba(37, 99, 235, 0.05);
+      }
+      
+      &.selected {
+        border-color: $accent-blue;
+        background: rgba(37, 99, 235, 0.1);
+      }
+      
+      .feature-checkbox {
+        input[type="checkbox"] {
+          width: 18px;
+          height: 18px;
+          accent-color: $accent-blue;
+        }
+      }
+      
+      .feature-label {
+        font-weight: 500;
+        color: $dark-gray;
+      }
+    }
+  }
+}
+
+// Upload Section
+.upload-section {
+  .upload-area {
+    border: 2px dashed $border-gray;
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    transition: all 0.2s ease;
+    margin-bottom: 24px;
+    
+    &.drag-over {
+      border-color: $accent-blue;
+      background: rgba(37, 99, 235, 0.05);
+    }
+    
+    .upload-content {
+      .upload-icon {
+        font-size: 48px;
+        margin-bottom: 16px;
+      }
+      
+      h3 {
+        color: $dark-gray;
+        margin-bottom: 8px;
+        font-size: 20px;
+      }
+      
+      p {
+        color: #6b7280;
+        margin-bottom: 20px;
+      }
+      
+      .file-input {
+        display: none;
+      }
+    }
+  }
+  
+  .image-preview-section {
+    margin-top: 24px;
+    
+    h3 {
+      color: $dark-gray;
+      margin-bottom: 16px;
+      font-size: 18px;
+    }
+    
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 16px;
+      
+      .image-preview {
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        aspect-ratio: 1;
+        
+        img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+        
+        .remove-image {
+          position: absolute;
+          top: 8px;
+          right: 8px;
+          width: 24px;
+          height: 24px;
+          border-radius: 50%;
+          background: rgba(0, 0, 0, 0.7);
+          color: white;
+          border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+          transition: background 0.2s ease;
+          
+          &:hover {
+            background: rgba(0, 0, 0, 0.9);
+          }
+        }
+      }
+    }
+  }
+  
+  .upload-requirement {
+    background: $warning-yellow;
+    color: white;
+    padding: 12px 16px;
+    border-radius: 8px;
+    text-align: center;
+    margin-top: 16px;
+    
+    p {
+      margin: 0;
+      font-weight: 500;
+    }
+  }
+}
+
+// Availability Section
+.availability-section {
+  margin-top: 32px;
+  
+  h3 {
+    color: $dark-gray;
+    margin-bottom: 8px;
+    font-size: 20px;
+  }
+  
+  p {
+    color: #6b7280;
+    margin-bottom: 20px;
+  }
+  
+  .calendar-placeholder {
+    text-align: center;
+    padding: 40px;
+    border: 2px dashed $border-gray;
+    border-radius: 12px;
+    
+    .calendar-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+    
+    p {
+      color: #6b7280;
+      margin: 0;
+    }
+  }
+}
+
+// Review Sections
+.review-sections {
+  display: grid;
+  gap: 24px;
+  
+  .review-section {
+    background: $light-gray;
+    border-radius: 12px;
+    padding: 24px;
+    
+    .review-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      
+      h3 {
+        color: $dark-gray;
+        margin: 0;
+        font-size: 18px;
+      }
+      
+      .edit-btn {
+        background: none;
+        border: none;
+        color: $accent-blue;
+        font-weight: 500;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: background 0.2s ease;
+        
+        &:hover {
+          background: rgba(37, 99, 235, 0.1);
+        }
+      }
+    }
+    
+    .review-content {
+      .review-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        padding: 8px 0;
+        border-bottom: 1px solid $border-gray;
+        
+        &:last-child {
+          border-bottom: none;
+        }
+        
+        .label {
+          font-weight: 500;
+          color: $dark-gray;
+        }
+        
+        .value {
+          color: $accent-blue;
+          font-weight: 600;
+        }
+      }
+      
+      .features-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        
+        .feature-tag {
+          background: $accent-blue;
+          color: white;
+          padding: 4px 12px;
+          border-radius: 16px;
+          font-size: 12px;
+          font-weight: 500;
+        }
+        
+        .no-features {
+          color: #6b7280;
+          font-style: italic;
+        }
+      }
+      
+      .photos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 12px;
+        
+        .photo-preview {
+          aspect-ratio: 1;
+          border-radius: 8px;
+          overflow: hidden;
+          
+          img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Form Navigation
+.form-navigation {
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid $border-gray;
+  
+  .navigation-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    
+    @media (max-width: 768px) {
+      flex-direction: column;
+      gap: 12px;
+    }
+  }
+  
+  .draft-actions {
+    text-align: center;
+  }
+}
+
+// Buttons
+.btn {
+  @include button-base;
+  
+  &.btn-primary {
+    background: $primary-red;
+    color: white;
+    
+    &:hover:not(:disabled) {
+      background: darken($primary-red, 10%);
+      transform: translateY(-1px);
+    }
+  }
+  
+  &.btn-secondary {
+    background: white;
+    color: $dark-gray;
+    border: 2px solid $border-gray;
+    
+    &:hover:not(:disabled) {
+      background: $light-gray;
+      border-color: $dark-gray;
+    }
+  }
+  
+  &.btn-outline {
+    background: transparent;
+    color: $accent-blue;
+    border: 2px solid $accent-blue;
+    
+    &:hover {
+      background: $accent-blue;
+      color: white;
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 768px) {
+  .add-car-listing-container {
+    padding: 16px;
+  }
+  
+  .header h1 {
+    font-size: 24px;
+  }
+  
+  .car-listing-form {
+    padding: 20px;
+  }
+  
+  .step-content .step-header h2 {
+    font-size: 24px;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .image-grid {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+  
+  .review-sections .review-section {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .step-indicators {
+    .step-indicator {
+      padding: 12px;
+      
+      .step-info {
+        .step-description {
+          display: none;
+        }
+      }
+    }
+  }
+  
+  .upload-area {
+    padding: 24px;
+  }
+  
+  .form-navigation .navigation-buttons {
+    .btn {
+      width: 100%;
+    }
+  }
+} 
