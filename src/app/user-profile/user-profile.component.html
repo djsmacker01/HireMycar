@@ -1,0 +1,383 @@
+<div class="user-profile-container">
+    <!-- Notification Toast -->
+    <div class="notification-toast" *ngIf="showNotification" [class]="'notification-' + notificationType">
+        <span class="notification-message">{{ notificationMessage }}</span>
+        <button class="notification-close" (click)="showNotification = false">×</button>
+    </div>
+
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="profile-avatar-section">
+            <div class="avatar-container">
+                <img [src]="avatarPreview || userProfile.avatarUrl" [alt]="userProfile.fullName" class="profile-avatar">
+                <div class="avatar-upload-overlay" *ngIf="isEditing">
+                    <input type="file" #fileInput (change)="onFileSelected($event)" accept="image/*" class="file-input">
+                    <button class="upload-btn" (click)="fileInput.click()">
+                        <span class="upload-icon">📷</span>
+                    </button>
+                </div>
+            </div>
+            <button class="upload-avatar-btn" *ngIf="selectedFile && isEditing" (click)="uploadAvatar()">
+                {{ isLoading ? 'Uploading...' : 'Upload Avatar' }}
+            </button>
+        </div>
+
+        <div class="profile-info">
+            <h1 class="profile-name">{{ userProfile.fullName }}</h1>
+            <p class="member-since">Member since {{ formatDate(userProfile.memberSince) }}</p>
+
+            <div class="verification-badges">
+                <div class="badge" [class.verified]="userProfile.isVerifiedEmail">
+                    <span class="badge-icon">{{ userProfile.isVerifiedEmail ? '✅' : '❌' }}</span>
+                    <span class="badge-text">Email</span>
+                </div>
+                <div class="badge" [class.verified]="userProfile.isVerifiedPhone">
+                    <span class="badge-icon">{{ userProfile.isVerifiedPhone ? '✅' : '❌' }}</span>
+                    <span class="badge-text">Phone</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-actions">
+            <button class="edit-btn" (click)="startEditing()" *ngIf="!isEditing">
+                Edit Profile
+            </button>
+            <div class="edit-actions" *ngIf="isEditing">
+                <button class="save-btn" (click)="saveProfile()" [disabled]="isLoading">
+                    {{ isLoading ? 'Saving...' : 'Save Changes' }}
+                </button>
+                <button class="cancel-btn" (click)="cancelEditing()" [disabled]="isLoading">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Completeness Indicator -->
+    <div class="completeness-section">
+        <div class="completeness-header">
+            <h3>Profile Completeness</h3>
+            <span class="completeness-percentage" [style.color]="getProfileCompletionColor()">
+                {{ userProfile.profileCompletion }}%
+            </span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="userProfile.profileCompletion"
+                [style.background-color]="getProfileCompletionColor()">
+            </div>
+        </div>
+        <div class="missing-fields" *ngIf="getMissingFields().length > 0">
+            <p class="missing-title">Complete your profile:</p>
+            <ul class="missing-list">
+                <li *ngFor="let field of getMissingFields()">{{ field }}</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Personal Information Section -->
+    <div class="section-card">
+        <div class="section-header">
+            <h2>Personal Information</h2>
+            <span class="section-icon">👤</span>
+        </div>
+
+        <div class="form-section" *ngIf="!isEditing">
+            <div class="info-row">
+                <label>Full Name</label>
+                <span>{{ userProfile.fullName }}</span>
+            </div>
+            <div class="info-row">
+                <label>Email</label>
+                <span>{{ userProfile.email }}</span>
+            </div>
+            <div class="info-row">
+                <label>Phone</label>
+                <span>{{ userProfile.phone }}</span>
+            </div>
+            <div class="info-row">
+                <label>Location</label>
+                <span>{{ userProfile.location }}</span>
+            </div>
+            <div class="info-row" *ngIf="userProfile.bio">
+                <label>Bio</label>
+                <span>{{ userProfile.bio }}</span>
+            </div>
+        </div>
+
+        <div class="form-section" *ngIf="isEditing">
+            <div class="form-group">
+                <label for="fullName">Full Name *</label>
+                <input type="text" id="fullName" [(ngModel)]="editedProfile!.fullName" class="form-input" required>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email *</label>
+                <input type="email" id="email" [(ngModel)]="editedProfile!.email" class="form-input" required>
+                <span class="error-message" *ngIf="emailError">{{ emailError }}</span>
+            </div>
+
+            <div class="form-group">
+                <label for="phone">Phone Number *</label>
+                <input type="tel" id="phone" [(ngModel)]="editedProfile!.phone" class="form-input"
+                    placeholder="+234 801 234 5678" required>
+                <span class="error-message" *ngIf="phoneError">{{ phoneError }}</span>
+            </div>
+
+            <div class="form-group">
+                <label for="location">Location *</label>
+                <select id="location" [(ngModel)]="editedProfile!.location" class="form-input" required>
+                    <option value="">Select State</option>
+                    <option *ngFor="let state of nigerianStates; trackBy: trackByStateCode" [value]="state.name">{{
+                        state.name }}</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="bio">Bio</label>
+                <textarea id="bio" [(ngModel)]="editedProfile!.bio" class="form-input" rows="4"
+                    placeholder="Tell us about yourself..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Document Verification Section -->
+    <div class="section-card">
+        <div class="section-header">
+            <h2>Document Verification</h2>
+            <span class="section-icon">📋</span>
+        </div>
+
+        <div class="verification-grid">
+            <div class="verification-item" [class.verified]="verificationStatus.driverLicenseUploaded">
+                <div class="verification-icon">
+                    {{ verificationStatus.driverLicenseUploaded ? '✅' : '📄' }}
+                </div>
+                <div class="verification-content">
+                    <h4>Driver's License</h4>
+                    <p>{{ verificationStatus.driverLicenseUploaded ? 'Uploaded' : 'Not uploaded' }}</p>
+                    <button class="upload-doc-btn" *ngIf="!verificationStatus.driverLicenseUploaded"
+                        (click)="uploadDocument('driverLicense')" [disabled]="isLoading">
+                        {{ isLoading ? 'Uploading...' : 'Upload' }}
+                    </button>
+                </div>
+            </div>
+
+            <div class="verification-item" [class.verified]="verificationStatus.idPhotoUploaded">
+                <div class="verification-icon">
+                    {{ verificationStatus.idPhotoUploaded ? '✅' : '🆔' }}
+                </div>
+                <div class="verification-content">
+                    <h4>ID Photo</h4>
+                    <p>{{ verificationStatus.idPhotoUploaded ? 'Uploaded' : 'Not uploaded' }}</p>
+                    <button class="upload-doc-btn" *ngIf="!verificationStatus.idPhotoUploaded"
+                        (click)="uploadDocument('idPhoto')" [disabled]="isLoading">
+                        {{ isLoading ? 'Uploading...' : 'Upload' }}
+                    </button>
+                </div>
+            </div>
+
+            <div class="verification-item" [class.verified]="verificationStatus.ninVerified">
+                <div class="verification-icon">
+                    {{ verificationStatus.ninVerified ? '✅' : '🆔' }}
+                </div>
+                <div class="verification-content">
+                    <h4>NIN Verification</h4>
+                    <p>{{ verificationStatus.ninVerified ? 'Verified' : 'Not verified' }}</p>
+                    <button class="verify-nin-btn" *ngIf="!verificationStatus.ninVerified" [disabled]="true">
+                        Coming Soon
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Car Owner Specific Section -->
+    <div class="section-card" *ngIf="userProfile.isCarOwner">
+        <div class="section-header">
+            <h2>Host Statistics</h2>
+            <span class="section-icon">🚗</span>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-content">
+                    <h4>Host Rating</h4>
+                    <p class="stat-value">{{ carOwnerStats.hostRating }}/5</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">⏱️</div>
+                <div class="stat-content">
+                    <h4>Response Rate</h4>
+                    <p class="stat-value">{{ carOwnerStats.responseRate }}%</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">🚙</div>
+                <div class="stat-content">
+                    <h4>Cars Listed</h4>
+                    <p class="stat-value">{{ carOwnerStats.totalCarsListed }}</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">💰</div>
+                <div class="stat-content">
+                    <h4>Total Earnings</h4>
+                    <p class="stat-value">{{ formatCurrency(carOwnerStats.totalEarnings) }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Renter Specific Section -->
+    <div class="section-card" *ngIf="!userProfile.isCarOwner">
+        <div class="section-header">
+            <h2>Renter Statistics</h2>
+            <span class="section-icon">👤</span>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">⭐</div>
+                <div class="stat-content">
+                    <h4>Renter Rating</h4>
+                    <p class="stat-value">{{ renterStats.renterRating }}/5</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">🚗</div>
+                <div class="stat-content">
+                    <h4>Trips Completed</h4>
+                    <p class="stat-value">{{ renterStats.tripsCompleted }}</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">📍</div>
+                <div class="stat-content">
+                    <h4>Favorite Locations</h4>
+                    <div class="favorite-locations">
+                        <span class="location-tag" *ngFor="let location of renterStats.favoriteLocations">
+                            {{ location }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Section -->
+    <div class="section-card">
+        <div class="section-header">
+            <h2>Settings</h2>
+            <span class="section-icon">⚙️</span>
+        </div>
+
+        <div class="settings-grid">
+            <div class="setting-item">
+                <div class="setting-content">
+                    <h4>Email Notifications</h4>
+                    <p>Receive updates via email</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" [(ngModel)]="notificationSettings.emailNotifications"
+                        (change)="toggleSetting('emailNotifications')">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-content">
+                    <h4>SMS Notifications</h4>
+                    <p>Receive updates via SMS</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" [(ngModel)]="notificationSettings.smsNotifications"
+                        (change)="toggleSetting('smsNotifications')">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-content">
+                    <h4>In-App Notifications</h4>
+                    <p>Receive push notifications</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" [(ngModel)]="notificationSettings.inAppNotifications"
+                        (change)="toggleSetting('inAppNotifications')">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-content">
+                    <h4>Profile Visibility</h4>
+                    <p>Make profile visible to others</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" [(ngModel)]="notificationSettings.profileVisible"
+                        (change)="toggleSetting('profileVisible')">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <div class="setting-content">
+                    <h4>Two-Factor Authentication</h4>
+                    <p>Add extra security to your account</p>
+                </div>
+                <label class="toggle-switch">
+                    <input type="checkbox" [(ngModel)]="notificationSettings.twoFactorAuth"
+                        (change)="toggleSetting('twoFactorAuth')">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Summary -->
+    <div class="section-card">
+        <div class="section-header">
+            <h2>Recent Activity</h2>
+            <span class="section-icon">📊</span>
+        </div>
+
+        <div class="activity-list">
+            <div class="activity-item" *ngFor="let activity of recentActivities; trackBy: trackByActivityId">
+                <div class="activity-icon">
+                    {{ getActivityIcon(activity.type) }}
+                </div>
+                <div class="activity-content">
+                    <h4>{{ activity.title }}</h4>
+                    <p>{{ activity.description }}</p>
+                    <div class="activity-meta">
+                        <span class="activity-time">{{ formatDateTime(activity.timestamp) }}</span>
+                        <span class="activity-status" *ngIf="activity.status"
+                            [style.color]="getStatusColor(activity.status)">
+                            {{ activity.status }}
+                        </span>
+                        <span class="activity-amount" *ngIf="activity.amount">
+                            {{ formatCurrency(activity.amount) }}
+                        </span>
+                        <span class="activity-rating" *ngIf="activity.rating">
+                            {{ '⭐'.repeat(activity.rating) }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="navigation-section">
+        <button class="nav-btn primary" (click)="navigateToDashboard()">
+            Back to Dashboard
+        </button>
+    </div>
+</div>
