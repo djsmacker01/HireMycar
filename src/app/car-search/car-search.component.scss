@@ -1,3 +1,5 @@
+@use "sass:color";
+
 // Enhanced Variables
 $primary-color: #1e40af;
 $secondary-color: #059669;
@@ -217,12 +219,12 @@ $shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     }
     
     &.btn-secondary {
-      background: linear-gradient(135deg, $secondary-color 0%, darken($secondary-color, 10%) 100%);
+      background: linear-gradient(135deg, $secondary-color 0%, color.adjust($secondary-color, $lightness: -10%) 100%);
       color: white;
       box-shadow: $shadow-md;
       
       &:hover {
-        background: linear-gradient(135deg, darken($secondary-color, 5%) 0%, darken($secondary-color, 15%) 100%);
+        background: linear-gradient(135deg, color.adjust($secondary-color, $lightness: -5%) 0%, color.adjust($secondary-color, $lightness: -15%) 100%);
         transform: translateY(-2px);
       }
     }
@@ -234,7 +236,7 @@ $shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   }
   
   .filter-count {
-    background: linear-gradient(135deg, $accent-color 0%, darken($accent-color, 10%) 100%);
+    background: linear-gradient(135deg, $accent-color 0%, color.adjust($accent-color, $lightness: -10%) 100%);
     color: white;
     border-radius: 50%;
     width: 1.5rem;
@@ -403,7 +405,7 @@ $shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   }
   
   &.active {
-    background: linear-gradient(135deg, $primary-color 0%, darken($primary-color, 10%) 100%);
+    background: linear-gradient(135deg, $primary-color 0%, color.adjust($primary-color, $lightness: -10%) 100%);
     border-color: $primary-color;
     color: white;
     box-shadow: $shadow-md;
@@ -559,12 +561,12 @@ $shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     @include button-base;
     
     &.btn-primary {
-      background: linear-gradient(135deg, $primary-color 0%, darken($primary-color, 10%) 100%);
+      background: linear-gradient(135deg, $primary-color 0%, color.adjust($primary-color, $lightness: -10%) 100%);
       color: white;
       box-shadow: $shadow-md;
       
       &:hover {
-        background: linear-gradient(135deg, darken($primary-color, 5%) 0%, darken($primary-color, 15%) 100%);
+        background: linear-gradient(135deg, color.adjust($primary-color, $lightness: -5%) 0%, color.adjust($primary-color, $lightness: -15%) 100%);
       }
     }
     
@@ -964,7 +966,7 @@ $shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   }
   
   .car-type-badge {
-    background: linear-gradient(135deg, $primary-color 0%, darken($primary-color, 10%) 100%);
+    background: linear-gradient(135deg, $primary-color 0%, color.adjust($primary-color, $lightness: -10%) 100%);
     color: white;
     padding: 0.5rem 1rem;
     border-radius: 0.75rem;
@@ -1106,12 +1108,12 @@ $shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     @include button-base;
     
     &.btn-primary {
-      background: linear-gradient(135deg, $primary-color 0%, darken($primary-color, 10%) 100%);
+      background: linear-gradient(135deg, $primary-color 0%, color.adjust($primary-color, $lightness: -10%) 100%);
       color: white;
       box-shadow: $shadow-md;
       
       &:hover {
-        background: linear-gradient(135deg, darken($primary-color, 5%) 0%, darken($primary-color, 15%) 100%);
+        background: linear-gradient(135deg, color.adjust($primary-color, $lightness: -5%) 0%, color.adjust($primary-color, $lightness: -15%) 100%);
       }
     }
     
@@ -1603,7 +1605,7 @@ $shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     gap: 12px;
 
     .preset-btn {
-      background: linear-gradient(135deg, $primary-color 0%, darken($primary-color, 10%) 100%);
+      background: linear-gradient(135deg, $primary-color 0%, color.adjust($primary-color, $lightness: -10%) 100%);
       color: white;
       border: none;
       padding: 16px 20px;
@@ -1635,7 +1637,7 @@ $shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
       }
 
       &.active {
-        background: linear-gradient(135deg, $accent-color 0%, darken($accent-color, 10%) 100%);
+        background: linear-gradient(135deg, $accent-color 0%, color.adjust($accent-color, $lightness: -10%) 100%);
         box-shadow: 0 4px 15px rgba($accent-color, 0.4);
       }
     }
@@ -1672,7 +1674,7 @@ $shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     }
 
     &.active {
-      background: linear-gradient(135deg, $primary-color 0%, darken($primary-color, 10%) 100%);
+      background: linear-gradient(135deg, $primary-color 0%, color.adjust($primary-color, $lightness: -10%) 100%);
       color: white;
     }
 
@@ -1684,16 +1686,16 @@ $shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   }
 
   .preset-toggle {
-    background: linear-gradient(135deg, $secondary-color 0%, darken($secondary-color, 10%) 100%);
+    background: linear-gradient(135deg, $secondary-color 0%, color.adjust($secondary-color, $lightness: -10%) 100%);
     color: white;
 
     &.active {
-      background: linear-gradient(135deg, $accent-color 0%, darken($accent-color, 10%) 100%);
+      background: linear-gradient(135deg, $accent-color 0%, color.adjust($accent-color, $lightness: -10%) 100%);
     }
   }
 
   .undo-btn {
-    background: linear-gradient(135deg, $warning-color 0%, darken($warning-color, 10%) 100%);
+    background: linear-gradient(135deg, $warning-color 0%, color.adjust($warning-color, $lightness: -10%) 100%);
     color: white;
   }
 
@@ -2281,7 +2283,7 @@ $shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
             color: white;
 
             &:hover {
-              background: darken($primary-color, 10%);
+              background: color.adjust($primary-color, $lightness: -10%);
             }
           }
 
