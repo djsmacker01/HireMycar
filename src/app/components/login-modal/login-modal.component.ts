@@ -113,7 +113,7 @@ export class LoginModalComponent implements OnInit, OnDestroy {
     }
   }
 
-  private isFormValid(): boolean {
+  isFormValid(): boolean {
     return !!(this.loginData.email && this.loginData.password);
   }
 
