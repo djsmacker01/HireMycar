@@ -1,6 +1,7 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 
 // Type Definitions
 interface CarListing {
@@ -47,7 +48,7 @@ interface FeatureInfo {
   templateUrl: './add-car-listing.component.html',
   styleUrls: ['./add-car-listing.component.scss']
 })
-export class AddCarListingComponent implements OnInit {
+export class AddCarListingComponent implements OnInit, OnDestroy {
   carListingForm!: FormGroup;
   currentStep = 1;
   totalSteps = 4;
@@ -56,6 +57,14 @@ export class AddCarListingComponent implements OnInit {
   showSuccessMessage = false;
   showErrorMessage = false;
   errorMessage = '';
+  
+  // Enhanced UI state
+  private destroy$ = new Subject<void>();
+  private searchSubject$ = new Subject<string>();
+  showLocationSuggestions = false;
+  locationSuggestions: string[] = [];
+  selectedLocation = '';
+  isLocationSearching = false;
 
   // Car data for dropdowns
   carMakes = [
@@ -90,13 +99,24 @@ export class AddCarListingComponent implements OnInit {
     { name: 'Bluetooth', icon: '📱', description: 'Bluetooth Connectivity', impact: 'standard' },
     { name: 'USB Port', icon: '🔌', description: 'USB Charging Ports', impact: 'basic' },
     { name: 'Reverse Camera', icon: '📹', description: 'Reverse Camera', impact: 'premium' },
-    { name: 'Parking Sensors', icon: '🚗', description: 'Parking Sensors', impact: 'premium' },
+    { name: 'Parking Sensors', icon: '📍', description: 'Parking Sensors', impact: 'premium' },
     { name: 'Heated Seats', icon: '🔥', description: 'Heated Seats', impact: 'premium' },
     { name: 'Sunroof', icon: '☀️', description: 'Sunroof', impact: 'premium' }
   ];
 
   locations = [
-    'Lagos Mainland', 'Lagos Island', 'Abuja', 'Port Harcourt', 'Kano'
+    'Lagos Mainland', 'Lagos Island', 'Victoria Island', 'Ikoyi', 'Lekki',
+    'Abuja', 'Garki', 'Asokoro', 'Maitama', 'Wuse',
+    'Port Harcourt', 'GRA Port Harcourt', 'Trans Amadi',
+    'Kano', 'Sabon Gari', 'Nassarawa',
+    'Ibadan', 'Bodija', 'Agodi',
+    'Enugu', 'Independence Layout', 'GRA Enugu',
+    'Kaduna', 'Ungwan Rimi', 'Malali',
+    'Benin City', 'GRA Benin', 'Ugbowo',
+    'Jos', 'Rayfield', 'Bukuru',
+    'Aba', 'Ariaria', 'Ogbor Hill',
+    'Onitsha', 'GRA Onitsha', 'Fegge',
+    'Warri', 'Effurun', 'Udu'
   ];
 
   // Step tracking
@@ -128,6 +148,66 @@ export class AddCarListingComponent implements OnInit {
     this.initializeForm();
     this.loadDraft();
     this.setupFormListeners();
+    this.initializeLocationSearch();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private initializeLocationSearch(): void {
+    this.searchSubject$
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(query => {
+        this.searchLocations(query);
+      });
+  }
+
+  onLocationInput(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.selectedLocation = target.value;
+    this.searchSubject$.next(this.selectedLocation);
+  }
+
+  onLocationFocus(): void {
+    if (this.selectedLocation.trim()) {
+      this.showLocationSuggestions = true;
+    }
+  }
+
+  onLocationBlur(): void {
+    setTimeout(() => {
+      this.showLocationSuggestions = false;
+    }, 200);
+  }
+
+  selectLocation(location: string): void {
+    this.selectedLocation = location;
+    this.carListingForm.patchValue({ location });
+    this.showLocationSuggestions = false;
+  }
+
+  private searchLocations(query: string): void {
+    if (!query.trim()) {
+      this.locationSuggestions = [];
+      this.showLocationSuggestions = false;
+      return;
+    }
+
+    this.isLocationSearching = true;
+    
+    setTimeout(() => {
+      this.locationSuggestions = this.locations.filter(location =>
+        location.toLowerCase().includes(query.toLowerCase())
+      ).slice(0, 5);
+      this.showLocationSuggestions = this.locationSuggestions.length > 0;
+      this.isLocationSearching = false;
+    }, 200);
   }
 
   private initializeForm(): void {
@@ -136,7 +216,7 @@ export class AddCarListingComponent implements OnInit {
       make: ['', Validators.required],
       model: ['', Validators.required],
       year: ['', Validators.required],
-      licensePlate: ['', [Validators.required, Validators.pattern(/^[A-Z]{2,3}\s?\d{2,3}\s?[A-Z]{1,3}\s?\d{2,4}$/)]],
+      licensePlate: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(15)]],
       color: ['', Validators.required],
       transmission: ['', Validators.required],
       fuelType: ['', Validators.required],
@@ -178,7 +258,7 @@ export class AddCarListingComponent implements OnInit {
   }
 
   private updateFormCompletion(): void {
-    const totalFields = 10; // Total required fields
+    const totalFields = 11; // Total required fields (10 form fields + 1 photo requirement)
     let completedFields = 0;
 
     // Check each required field

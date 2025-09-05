@@ -1,455 +1,529 @@
+<!-- Enhanced Add Car Listing Page -->
 <div class="add-car-listing-container">
-    <!-- Header -->
-    <div class="header">
-        <h1>Add Car Listing</h1>
-        <p>List your car for rent on HireMyCar.com.ng</p>
-    </div>
-
-    <!-- Progress Bar -->
-    <div class="progress-container">
-        <div class="progress-bar">
-            <div class="progress-fill" [style.width.%]="getStepProgress()"></div>
-        </div>
-        <div class="progress-text">Step {{ currentStep }} of {{ totalSteps }}</div>
-    </div>
-
-    <!-- Step Indicators -->
-    <div class="step-indicators">
-        <div *ngFor="let step of steps; let i = index" class="step-indicator" [class.active]="currentStep === i + 1"
-            [class.completed]="step.completed" (click)="goToStep(i + 1)">
-            <div class="step-number">{{ i + 1 }}</div>
-            <div class="step-info">
-                <div class="step-title">{{ step.title }}</div>
-                <div class="step-description">{{ step.description }}</div>
+    <!-- Hero Header -->
+    <div class="hero-header">
+        <div class="hero-content">
+            <h1 class="hero-title">
+                List Your Car for Rent
+            </h1>
+            <p class="hero-subtitle">
+                Join thousands of car owners earning extra income with HireMyCar.
+                List your car in minutes and start earning today.
+            </p>
+            <div class="hero-stats">
+                <div class="stat-item">
+                    <span class="stat-number">₦25,000</span>
+                    <span class="stat-label">Average Daily Earnings</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">2,500+</span>
+                    <span class="stat-label">Active Car Owners</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">98%</span>
+                    <span class="stat-label">Satisfaction Rate</span>
+                </div>
             </div>
         </div>
     </div>
 
-      <!-- Notifications -->
-  <div *ngIf="isDraftSaved" class="draft-notification">
-    <span>✓ Draft saved automatically</span>
-  </div>
+    <!-- Progress Section -->
+    <div class="progress-section">
+        <div class="container">
+            <!-- Step Progress Bar -->
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" [style.width.%]="getStepProgress()"></div>
+                </div>
+                <div class="progress-info">
+                    <span class="progress-text">Step {{ currentStep }} of {{ totalSteps }}</span>
+                    <span class="completion-text">{{ formCompletionPercentage }}% Complete</span>
+                </div>
+            </div>
 
-  <div *ngIf="showSuccessMessage" class="success-notification">
-    <span>🎉 Car listing submitted successfully!</span>
-  </div>
-
-  <div *ngIf="showErrorMessage" class="error-notification">
-    <span>⚠️ {{ errorMessage }}</span>
-  </div>
-
-  <!-- Form Completion Progress -->
-  <div class="completion-progress">
-    <div class="completion-bar">
-      <div class="completion-fill" [style.width.%]="formCompletionPercentage"></div>
+            <!-- Step Indicators -->
+            <div class="step-indicators">
+                <div *ngFor="let step of steps; let i = index" class="step-indicator"
+                    [class.active]="currentStep === i + 1" [class.completed]="step.completed" (click)="goToStep(i + 1)">
+                    <div class="step-circle">
+                        <span class="step-number" *ngIf="!step.completed">{{ i + 1 }}</span>
+                        <span class="step-check" *ngIf="step.completed">✓</span>
+                    </div>
+                    <div class="step-info">
+                        <div class="step-title">{{ step.title }}</div>
+                        <div class="step-description">{{ step.description }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="completion-text">{{ formCompletionPercentage }}% Complete</div>
-  </div>
 
-    <!-- Form Container -->
+    <!-- Notifications -->
+    <div class="notifications-container">
+        <div *ngIf="isDraftSaved" class="notification draft-notification">
+            <span class="notification-icon">💾</span>
+            <span class="notification-text">Draft saved automatically</span>
+        </div>
+
+        <div *ngIf="showSuccessMessage" class="notification success-notification">
+            <span class="notification-icon">🎉</span>
+            <span class="notification-text">Car listing submitted successfully!</span>
+        </div>
+
+        <div *ngIf="showErrorMessage" class="notification error-notification">
+            <span class="notification-icon">⚠️</span>
+            <span class="notification-text">{{ errorMessage }}</span>
+        </div>
+    </div>
+
+    <!-- Main Form Container -->
     <div class="form-container">
-        <form [formGroup]="carListingForm" class="car-listing-form">
+        <div class="container">
+            <form [formGroup]="carListingForm" (ngSubmit)="submitListing()" class="car-listing-form">
 
-            <!-- Step 1: Car Details -->
-            <div *ngIf="currentStep === 1" class="step-content">
-                <div class="step-header">
-                    <h2>Car Details</h2>
-                    <p>Tell us about your car</p>
-                </div>
-
-                <div class="form-grid">
-                    <!-- Make and Model -->
-                    <div class="form-group">
-                        <label for="make">Car Make *</label>
-                        <select id="make" formControlName="make" class="form-select">
-                            <option value="">Select Make</option>
-                            <option *ngFor="let make of carMakes" [value]="make">{{ make }}</option>
-                        </select>
-                        <div *ngIf="carListingForm.get('make')?.invalid && carListingForm.get('make')?.touched"
-                            class="error-message">
-                            Please select a car make
-                        </div>
+                <!-- Step 1: Car Details -->
+                <div class="step-content" *ngIf="currentStep === 1" [class.step-transition]="true">
+                    <div class="step-header">
+                        <h2 class="step-title">Car Details</h2>
+                        <p class="step-description">Tell us about your car's basic information</p>
                     </div>
 
-                    <div class="form-group">
-                        <label for="model">Car Model *</label>
-                        <select id="model" formControlName="model" class="form-select"
-                            [disabled]="!carListingForm.get('make')?.value">
-                            <option value="">Select Model</option>
-                            <option *ngFor="let model of getAvailableModels()" [value]="model">{{ model }}</option>
-                        </select>
-                        <div *ngIf="carListingForm.get('model')?.invalid && carListingForm.get('model')?.touched"
-                            class="error-message">
-                            Please select a car model
-                        </div>
-                    </div>
-
-                    <!-- Year and License Plate -->
-                    <div class="form-group">
-                        <label for="year">Year *</label>
-                        <select id="year" formControlName="year" class="form-select">
-                            <option value="">Select Year</option>
-                            <option *ngFor="let year of years" [value]="year">{{ year }}</option>
-                        </select>
-                        <div *ngIf="carListingForm.get('year')?.invalid && carListingForm.get('year')?.touched"
-                            class="error-message">
-                            Please select a year
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="licensePlate">License Plate *</label>
-                        <input type="text" id="licensePlate" formControlName="licensePlate"
-                            placeholder="e.g., ABC 123 DE" class="form-input">
-                        <div *ngIf="carListingForm.get('licensePlate')?.invalid && carListingForm.get('licensePlate')?.touched"
-                            class="error-message">
-                            <span *ngIf="carListingForm.get('licensePlate')?.errors?.['required']">License plate is
-                                required</span>
-                            <span *ngIf="carListingForm.get('licensePlate')?.errors?.['pattern']">Please enter a valid
-                                license plate format</span>
-                        </div>
-                    </div>
-
-                    <!-- Color and Transmission -->
-                    <div class="form-group">
-                        <label for="color">Color *</label>
-                        <input type="text" id="color" formControlName="color" placeholder="e.g., Red, Blue, White"
-                            class="form-input">
-                        <div *ngIf="carListingForm.get('color')?.invalid && carListingForm.get('color')?.touched"
-                            class="error-message">
-                            Please enter the car color
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="transmission">Transmission *</label>
-                        <select id="transmission" formControlName="transmission" class="form-select">
-                            <option value="">Select Transmission</option>
-                            <option *ngFor="let type of transmissionTypes" [value]="type">{{ type }}</option>
-                        </select>
-                        <div *ngIf="carListingForm.get('transmission')?.invalid && carListingForm.get('transmission')?.touched"
-                            class="error-message">
-                            Please select transmission type
-                        </div>
-                    </div>
-
-                    <!-- Fuel Type and Seats -->
-                    <div class="form-group">
-                        <label for="fuelType">Fuel Type *</label>
-                        <select id="fuelType" formControlName="fuelType" class="form-select">
-                            <option value="">Select Fuel Type</option>
-                            <option *ngFor="let type of fuelTypes" [value]="type">{{ type }}</option>
-                        </select>
-                        <div *ngIf="carListingForm.get('fuelType')?.invalid && carListingForm.get('fuelType')?.touched"
-                            class="error-message">
-                            Please select fuel type
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="seats">Number of Seats *</label>
-                        <select id="seats" formControlName="seats" class="form-select">
-                            <option value="">Select Seats</option>
-                            <option *ngFor="let seat of seatOptions" [value]="seat">{{ seat }} seats</option>
-                        </select>
-                        <div *ngIf="carListingForm.get('seats')?.invalid && carListingForm.get('seats')?.touched"
-                            class="error-message">
-                            Please select number of seats
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Features Section -->
-                <div class="features-section">
-                    <h3>Car Features</h3>
-                    <p>Select all features available in your car</p>
-                    <div class="features-grid">
-                        <div *ngFor="let feature of carFeatures" class="feature-item"
-                            [class.selected]="isFeatureSelected(feature.name)" 
-                            [class]="getFeatureImpactClass(feature.impact)"
-                            (click)="toggleFeature(feature.name)">
-                            <div class="feature-checkbox">
-                                <input type="checkbox" [checked]="isFeatureSelected(feature.name)" readonly>
+                    <div class="form-grid">
+                        <!-- Make Selection -->
+                        <div class="form-group">
+                            <label class="form-label">Car Make *</label>
+                            <div class="select-wrapper">
+                                <select formControlName="make" class="form-select"
+                                    [class.error]="carListingForm.get('make')?.invalid && carListingForm.get('make')?.touched">
+                                    <option value="">Select Make</option>
+                                    <option *ngFor="let make of carMakes" [value]="make">{{ make }}</option>
+                                </select>
+                                <span class="select-arrow">▼</span>
                             </div>
-                            <div class="feature-content">
-                                <span class="feature-icon">{{ feature.icon }}</span>
-                                <div class="feature-details">
-                                    <span class="feature-label">{{ feature.name }}</span>
-                                    <span class="feature-description">{{ feature.description }}</span>
+                            <div class="form-error"
+                                *ngIf="carListingForm.get('make')?.invalid && carListingForm.get('make')?.touched">
+                                Please select a car make
+                            </div>
+                        </div>
+
+                        <!-- Model Selection -->
+                        <div class="form-group">
+                            <label class="form-label">Car Model *</label>
+                            <div class="select-wrapper">
+                                <select formControlName="model" class="form-select"
+                                    [class.error]="carListingForm.get('model')?.invalid && carListingForm.get('model')?.touched"
+                                    [disabled]="!getAvailableModels().length">
+                                    <option value="">Select Model</option>
+                                    <option *ngFor="let model of getAvailableModels()" [value]="model">{{ model }}
+                                    </option>
+                                </select>
+                                <span class="select-arrow">▼</span>
+                            </div>
+                            <div class="form-error"
+                                *ngIf="carListingForm.get('model')?.invalid && carListingForm.get('model')?.touched">
+                                Please select a car model
+                            </div>
+                        </div>
+
+                        <!-- Year Selection -->
+                        <div class="form-group">
+                            <label class="form-label">Year *</label>
+                            <div class="select-wrapper">
+                                <select formControlName="year" class="form-select"
+                                    [class.error]="carListingForm.get('year')?.invalid && carListingForm.get('year')?.touched">
+                                    <option value="">Select Year</option>
+                                    <option *ngFor="let year of years" [value]="year">{{ year }}</option>
+                                </select>
+                                <span class="select-arrow">▼</span>
+                            </div>
+                            <div class="form-error"
+                                *ngIf="carListingForm.get('year')?.invalid && carListingForm.get('year')?.touched">
+                                Please select a year
+                            </div>
+                        </div>
+
+                        <!-- License Plate -->
+                        <div class="form-group">
+                            <label class="form-label">License Plate *</label>
+                            <input type="text" formControlName="licensePlate" class="form-input"
+                                placeholder="e.g., ABC 123 DE"
+                                [class.error]="carListingForm.get('licensePlate')?.invalid && carListingForm.get('licensePlate')?.touched">
+                            <div class="form-error"
+                                *ngIf="carListingForm.get('licensePlate')?.invalid && carListingForm.get('licensePlate')?.touched">
+                                Please enter a valid license plate (3-15 characters)
+                            </div>
+                        </div>
+
+                        <!-- Color -->
+                        <div class="form-group">
+                            <label class="form-label">Color *</label>
+                            <input type="text" formControlName="color" class="form-input"
+                                placeholder="e.g., White, Black, Silver"
+                                [class.error]="carListingForm.get('color')?.invalid && carListingForm.get('color')?.touched">
+                            <div class="form-error"
+                                *ngIf="carListingForm.get('color')?.invalid && carListingForm.get('color')?.touched">
+                                Please enter the car color
+                            </div>
+                        </div>
+
+                        <!-- Transmission -->
+                        <div class="form-group">
+                            <label class="form-label">Transmission *</label>
+                            <div class="radio-group">
+                                <label class="radio-option" *ngFor="let transmission of transmissionTypes">
+                                    <input type="radio" formControlName="transmission" [value]="transmission"
+                                        class="radio-input">
+                                    <span class="radio-custom"></span>
+                                    <span class="radio-label">{{ transmission }}</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Fuel Type -->
+                        <div class="form-group">
+                            <label class="form-label">Fuel Type *</label>
+                            <div class="radio-group">
+                                <label class="radio-option" *ngFor="let fuel of fuelTypes">
+                                    <input type="radio" formControlName="fuelType" [value]="fuel" class="radio-input">
+                                    <span class="radio-custom"></span>
+                                    <span class="radio-label">{{ fuel }}</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Seats -->
+                        <div class="form-group">
+                            <label class="form-label">Number of Seats *</label>
+                            <div class="select-wrapper">
+                                <select formControlName="seats" class="form-select"
+                                    [class.error]="carListingForm.get('seats')?.invalid && carListingForm.get('seats')?.touched">
+                                    <option value="">Select Seats</option>
+                                    <option *ngFor="let seat of seatOptions" [value]="seat">{{ seat }} Seats</option>
+                                </select>
+                                <span class="select-arrow">▼</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Features Section -->
+                    <div class="features-section">
+                        <h3 class="features-title">Car Features</h3>
+                        <p class="features-description">Select features that apply to your car (optional but
+                            recommended)</p>
+
+                        <div class="features-grid">
+                            <div *ngFor="let feature of carFeatures" class="feature-card"
+                                [class.selected]="isFeatureSelected(feature.name)"
+                                [class]="getFeatureImpactClass(feature.impact)" (click)="toggleFeature(feature.name)">
+                                <div class="feature-icon">{{ feature.icon }}</div>
+                                <div class="feature-info">
+                                    <div class="feature-name">{{ feature.description }}</div>
+                                    <div class="feature-impact">{{ feature.impact }}</div>
                                 </div>
+                                <div class="feature-check" *ngIf="isFeatureSelected(feature.name)">✓</div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Step 2: Photo Upload -->
-            <div *ngIf="currentStep === 2" class="step-content">
-                <div class="step-header">
-                    <h2>Upload Photos</h2>
-                    <p>Add at least 4 photos of your car</p>
-                </div>
-
-                <div class="upload-section">
-                    <!-- Upload Area -->
-                    <div class="upload-area" [class.drag-over]="dragOver" (dragover)="onDragOver($event)"
-                        (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
-                        <div class="upload-content">
-                            <div class="upload-icon">📷</div>
-                            <h3>Upload Car Photos</h3>
-                            <p>Drag and drop images here or click to browse</p>
-                            <input type="file" multiple accept="image/*" (change)="onFileSelected($event)"
-                                class="file-input" #fileInput>
-                            <button type="button" class="btn btn-secondary" (click)="fileInput.click()">
-                                Choose Files
-                            </button>
-                        </div>
+                <!-- Step 2: Photos -->
+                <div class="step-content" *ngIf="currentStep === 2" [class.step-transition]="true">
+                    <div class="step-header">
+                        <h2 class="step-title">Car Photos</h2>
+                        <p class="step-description">Upload high-quality photos of your car (minimum 4 photos required)
+                        </p>
                     </div>
 
-                    <!-- Image Preview -->
-                    <div *ngIf="uploadedImages.length > 0" class="image-preview-section">
-                        <h3>Uploaded Photos ({{ uploadedImages.length }}/6)</h3>
-                        <div class="image-grid">
-                            <div *ngFor="let imageUrl of imagePreviewUrls; let i = index" class="image-preview">
-                                <img [src]="imageUrl" [alt]="'Car photo ' + (i + 1)">
-                                <button type="button" class="remove-image" (click)="removeImage(i)"
-                                    aria-label="Remove image">
-                                    ×
+                    <div class="photo-upload-section">
+                        <!-- Upload Area -->
+                        <div class="upload-area" [class.drag-over]="dragOver" [class.uploading]="isUploading"
+                            (dragover)="onDragOver($event)" (dragleave)="onDragLeave($event)" (drop)="onDrop($event)">
+                            <div class="upload-content" *ngIf="!isUploading">
+                                <div class="upload-icon">📸</div>
+                                <h3 class="upload-title">Drop photos here or click to browse</h3>
+                                <p class="upload-description">Upload at least 4 photos. Include exterior, interior, and
+                                    engine shots.</p>
+                                <input type="file" multiple accept="image/*" (change)="onFileSelected($event)"
+                                    class="file-input" #fileInput>
+                                <button type="button" class="upload-btn" (click)="fileInput.click()">
+                                    Choose Photos
                                 </button>
                             </div>
+
+                            <div class="upload-loading" *ngIf="isUploading">
+                                <div class="loading-spinner"></div>
+                                <p>Uploading photos...</p>
+                            </div>
                         </div>
-                    </div>
 
-                    <div *ngIf="uploadedImages.length < 4" class="upload-requirement">
-                        <p>⚠️ Please upload at least 4 photos to continue</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Step 3: Pricing & Availability -->
-            <div *ngIf="currentStep === 3" class="step-content">
-                <div class="step-header">
-                    <h2>Pricing & Availability</h2>
-                    <p>Set your rates and availability</p>
-                </div>
-
-                        <!-- Dynamic Pricing Suggestions -->
-        <div *ngIf="suggestedDailyRate > 0" class="pricing-suggestions">
-            <h3>💡 Pricing Suggestions</h3>
-            <div class="suggestion-cards">
-                <div class="suggestion-card">
-                    <div class="suggestion-label">Suggested Rate</div>
-                    <div class="suggestion-value">{{ formatCurrency(suggestedDailyRate) }}</div>
-                    <div class="suggestion-note">Based on your car and features</div>
-                </div>
-                <div class="suggestion-card">
-                    <div class="suggestion-label">Market Average</div>
-                    <div class="suggestion-value">{{ formatCurrency(marketAverage) }}</div>
-                    <div class="suggestion-note">Similar cars in your area</div>
-                </div>
-                <div class="suggestion-card">
-                    <div class="suggestion-label">Feature Bonus</div>
-                    <div class="suggestion-value">+{{ Math.round((featureMultiplier - 1) * 100) }}%</div>
-                    <div class="suggestion-note">{{ selectedFeatures.length }} premium features</div>
-                </div>
-            </div>
-        </div>
-
-        <div class="form-grid">
-            <!-- Daily Rate -->
-            <div class="form-group">
-                <label for="dailyRate">Daily Rate (₦) *</label>
-                <input type="number" id="dailyRate" formControlName="dailyRate" placeholder="e.g., 25000"
-                    class="form-input" min="1000">
-                <div *ngIf="carListingForm.get('dailyRate')?.invalid && carListingForm.get('dailyRate')?.touched"
-                    class="error-message">
-                    <span *ngIf="carListingForm.get('dailyRate')?.errors?.['required']">Daily rate is
-                        required</span>
-                    <span *ngIf="carListingForm.get('dailyRate')?.errors?.['min']">Daily rate must be at least
-                        ₦1,000</span>
-                </div>
-            </div>
-
-                    <!-- Weekly Discount -->
-                    <div class="form-group">
-                        <label for="weeklyDiscount">Weekly Discount (%)</label>
-                        <input type="number" id="weeklyDiscount" formControlName="weeklyDiscount" placeholder="e.g., 10"
-                            class="form-input" min="0" max="50">
-                        <div *ngIf="carListingForm.get('weeklyDiscount')?.invalid && carListingForm.get('weeklyDiscount')?.touched"
-                            class="error-message">
-                            Discount must be between 0% and 50%
+                        <!-- Photo Grid -->
+                        <div class="photo-grid" *ngIf="imagePreviewUrls.length > 0">
+                            <div *ngFor="let imageUrl of imagePreviewUrls; let i = index" class="photo-item">
+                                <img [src]="imageUrl" [alt]="'Car photo ' + (i + 1)" class="photo-preview">
+                                <button type="button" class="remove-photo" (click)="removeImage(i)">
+                                    <span>×</span>
+                                </button>
+                                <div class="photo-number">{{ i + 1 }}</div>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Monthly Discount -->
-                    <div class="form-group">
-                        <label for="monthlyDiscount">Monthly Discount (%)</label>
-                        <input type="number" id="monthlyDiscount" formControlName="monthlyDiscount"
-                            placeholder="e.g., 20" class="form-input" min="0" max="50">
-                        <div *ngIf="carListingForm.get('monthlyDiscount')?.invalid && carListingForm.get('monthlyDiscount')?.touched"
-                            class="error-message">
-                            Discount must be between 0% and 50%
-                        </div>
-                    </div>
-
-                    <!-- Location -->
-                    <div class="form-group">
-                        <label for="location">Pickup Location *</label>
-                        <select id="location" formControlName="location" class="form-select">
-                            <option value="">Select Location</option>
-                            <option *ngFor="let location of locations" [value]="location">{{ location }}</option>
-                        </select>
-                        <div *ngIf="carListingForm.get('location')?.invalid && carListingForm.get('location')?.touched"
-                            class="error-message">
-                            Please select a pickup location
+                        <!-- Photo Requirements -->
+                        <div class="photo-requirements">
+                            <h4>Photo Requirements:</h4>
+                            <ul>
+                                <li>✅ High resolution (at least 1920x1080)</li>
+                                <li>✅ Good lighting and clear visibility</li>
+                                <li>✅ Include exterior shots from multiple angles</li>
+                                <li>✅ Show interior dashboard and seats</li>
+                                <li>✅ Include engine bay if possible</li>
+                            </ul>
                         </div>
                     </div>
                 </div>
 
-                <!-- Availability Calendar Placeholder -->
-                <div class="availability-section">
-                    <h3>Availability</h3>
-                    <p>Calendar functionality will be implemented in future updates</p>
-                    <div class="calendar-placeholder">
-                        <div class="calendar-icon">📅</div>
-                        <p>Availability calendar coming soon</p>
+                <!-- Step 3: Pricing & Location -->
+                <div class="step-content" *ngIf="currentStep === 3" [class.step-transition]="true">
+                    <div class="step-header">
+                        <h2 class="step-title">Pricing & Location</h2>
+                        <p class="step-description">Set your rental rates and location</p>
+                    </div>
+
+                    <div class="pricing-location-grid">
+                        <!-- Pricing Section -->
+                        <div class="pricing-section">
+                            <h3 class="section-title">Daily Rate</h3>
+
+                            <!-- Suggested Pricing -->
+                            <div class="pricing-suggestions" *ngIf="suggestedDailyRate > 0">
+                                <div class="suggestion-card">
+                                    <div class="suggestion-header">
+                                        <span class="suggestion-label">Suggested Rate</span>
+                                        <span class="suggestion-price">{{ formatCurrency(suggestedDailyRate) }}</span>
+                                    </div>
+                                    <div class="suggestion-details">
+                                        <p>Based on {{ carListingForm.get('make')?.value }} {{
+                                            carListingForm.get('model')?.value }} {{ carListingForm.get('year')?.value
+                                            }}</p>
+                                        <p>Market average: {{ formatCurrency(marketAverage) }}</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Daily Rate Input -->
+                            <div class="form-group">
+                                <label class="form-label">Daily Rate (₦) *</label>
+                                <div class="input-with-suffix">
+                                    <input type="number" formControlName="dailyRate" class="form-input"
+                                        placeholder="25000"
+                                        [class.error]="carListingForm.get('dailyRate')?.invalid && carListingForm.get('dailyRate')?.touched">
+                                    <span class="input-suffix">₦/day</span>
+                                </div>
+                                <div class="form-error"
+                                    *ngIf="carListingForm.get('dailyRate')?.invalid && carListingForm.get('dailyRate')?.touched">
+                                    Please enter a valid daily rate (minimum ₦1,000)
+                                </div>
+                            </div>
+
+                            <!-- Discount Options -->
+                            <div class="discount-section">
+                                <h4>Bulk Discounts (Optional)</h4>
+                                <div class="discount-grid">
+                                    <div class="form-group">
+                                        <label class="form-label">Weekly Discount (%)</label>
+                                        <input type="number" formControlName="weeklyDiscount" class="form-input"
+                                            placeholder="10" min="0" max="50">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">Monthly Discount (%)</label>
+                                        <input type="number" formControlName="monthlyDiscount" class="form-input"
+                                            placeholder="20" min="0" max="50">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Location Section -->
+                        <div class="location-section">
+                            <h3 class="section-title">Location</h3>
+
+                            <div class="form-group">
+                                <label class="form-label">Pickup Location *</label>
+                                <div class="location-input-wrapper">
+                                    <input type="text" formControlName="location" class="form-input location-input"
+                                        placeholder="Search for your location..." [value]="selectedLocation"
+                                        (input)="onLocationInput($event)" (focus)="onLocationFocus()"
+                                        (blur)="onLocationBlur()"
+                                        [class.error]="carListingForm.get('location')?.invalid && carListingForm.get('location')?.touched">
+                                    <span class="location-icon">📍</span>
+
+                                    <!-- Location Suggestions -->
+                                    <div class="location-suggestions"
+                                        *ngIf="showLocationSuggestions && locationSuggestions.length > 0">
+                                        <div class="suggestions-header">
+                                            <span>Suggested Locations</span>
+                                        </div>
+                                        <div class="suggestions-list">
+                                            <button type="button" class="suggestion-item"
+                                                *ngFor="let location of locationSuggestions"
+                                                (click)="selectLocation(location)">
+                                                <span class="suggestion-icon">📍</span>
+                                                <span class="suggestion-text">{{ location }}</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-error"
+                                    *ngIf="carListingForm.get('location')?.invalid && carListingForm.get('location')?.touched">
+                                    Please select a location
+                                </div>
+                            </div>
+
+                            <!-- Location Tips -->
+                            <div class="location-tips">
+                                <h4>Location Tips:</h4>
+                                <ul>
+                                    <li>✅ Choose a safe, accessible location</li>
+                                    <li>✅ Consider parking availability</li>
+                                    <li>✅ Popular areas get more bookings</li>
+                                    <li>✅ Be specific (e.g., "Victoria Island, Lagos")</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Step 4: Review & Submit -->
-            <div *ngIf="currentStep === 4" class="step-content">
-                <div class="step-header">
-                    <h2>Review & Submit</h2>
-                    <p>Review your car listing before submitting</p>
-                </div>
+                <!-- Step 4: Review & Submit -->
+                <div class="step-content" *ngIf="currentStep === 4" [class.step-transition]="true">
+                    <div class="step-header">
+                        <h2 class="step-title">Review & Submit</h2>
+                        <p class="step-description">Review your listing details before submitting</p>
+                    </div>
 
-                <div class="review-sections">
-                    <!-- Car Information -->
                     <div class="review-section">
-                        <div class="review-header">
-                            <h3>Car Information</h3>
-                            <button type="button" class="edit-btn" (click)="goToStep(1)">Edit</button>
+                        <!-- Car Details Review -->
+                        <div class="review-card">
+                            <h3 class="review-title">Car Details</h3>
+                            <div class="review-grid">
+                                <div class="review-item">
+                                    <span class="review-label">Make & Model:</span>
+                                    <span class="review-value">{{ carListingForm.get('make')?.value }} {{
+                                        carListingForm.get('model')?.value }}</span>
+                                </div>
+                                <div class="review-item">
+                                    <span class="review-label">Year:</span>
+                                    <span class="review-value">{{ carListingForm.get('year')?.value }}</span>
+                                </div>
+                                <div class="review-item">
+                                    <span class="review-label">License Plate:</span>
+                                    <span class="review-value">{{ carListingForm.get('licensePlate')?.value }}</span>
+                                </div>
+                                <div class="review-item">
+                                    <span class="review-label">Color:</span>
+                                    <span class="review-value">{{ carListingForm.get('color')?.value }}</span>
+                                </div>
+                                <div class="review-item">
+                                    <span class="review-label">Transmission:</span>
+                                    <span class="review-value">{{ carListingForm.get('transmission')?.value }}</span>
+                                </div>
+                                <div class="review-item">
+                                    <span class="review-label">Fuel Type:</span>
+                                    <span class="review-value">{{ carListingForm.get('fuelType')?.value }}</span>
+                                </div>
+                                <div class="review-item">
+                                    <span class="review-label">Seats:</span>
+                                    <span class="review-value">{{ carListingForm.get('seats')?.value }}</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="review-content">
-                            <div class="review-item">
-                                <span class="label">Make & Model:</span>
-                                <span class="value">{{ carListingForm.get('make')?.value }} {{
-                                    carListingForm.get('model')?.value }}</span>
-                            </div>
-                            <div class="review-item">
-                                <span class="label">Year:</span>
-                                <span class="value">{{ carListingForm.get('year')?.value }}</span>
-                            </div>
-                            <div class="review-item">
-                                <span class="label">License Plate:</span>
-                                <span class="value">{{ carListingForm.get('licensePlate')?.value }}</span>
-                            </div>
-                            <div class="review-item">
-                                <span class="label">Color:</span>
-                                <span class="value">{{ carListingForm.get('color')?.value }}</span>
-                            </div>
-                            <div class="review-item">
-                                <span class="label">Transmission:</span>
-                                <span class="value">{{ carListingForm.get('transmission')?.value }}</span>
-                            </div>
-                            <div class="review-item">
-                                <span class="label">Fuel Type:</span>
-                                <span class="value">{{ carListingForm.get('fuelType')?.value }}</span>
-                            </div>
-                            <div class="review-item">
-                                <span class="label">Seats:</span>
-                                <span class="value">{{ carListingForm.get('seats')?.value }} seats</span>
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- Features -->
-                    <div class="review-section">
-                        <div class="review-header">
-                            <h3>Features</h3>
-                            <button type="button" class="edit-btn" (click)="goToStep(1)">Edit</button>
-                        </div>
-                        <div class="review-content">
-                            <div class="features-list">
-                                <span *ngFor="let feature of carListingForm.get('features')?.value" class="feature-tag">
-                                    {{ feature }}
+                        <!-- Features Review -->
+                        <div class="review-card" *ngIf="selectedFeatures.length > 0">
+                            <h3 class="review-title">Selected Features</h3>
+                            <div class="features-review">
+                                <span *ngFor="let feature of selectedFeatures" class="feature-badge">
+                                    {{ getFeatureInfo(feature)?.icon }} {{ getFeatureInfo(feature)?.description }}
                                 </span>
-                                <span *ngIf="!carListingForm.get('features')?.value?.length" class="no-features">
-                                    No features selected
-                                </span>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Photos -->
-                    <div class="review-section">
-                        <div class="review-header">
-                            <h3>Photos ({{ uploadedImages.length }})</h3>
-                            <button type="button" class="edit-btn" (click)="goToStep(2)">Edit</button>
+                        <!-- Pricing Review -->
+                        <div class="review-card">
+                            <h3 class="review-title">Pricing</h3>
+                            <div class="pricing-review">
+                                <div class="pricing-item">
+                                    <span class="pricing-label">Daily Rate:</span>
+                                    <span class="pricing-value">{{
+                                        formatCurrency(carListingForm.get('dailyRate')?.value) }}</span>
+                                </div>
+                                <div class="pricing-item" *ngIf="carListingForm.get('weeklyDiscount')?.value > 0">
+                                    <span class="pricing-label">Weekly Discount:</span>
+                                    <span class="pricing-value">{{ carListingForm.get('weeklyDiscount')?.value
+                                        }}%</span>
+                                </div>
+                                <div class="pricing-item" *ngIf="carListingForm.get('monthlyDiscount')?.value > 0">
+                                    <span class="pricing-label">Monthly Discount:</span>
+                                    <span class="pricing-value">{{ carListingForm.get('monthlyDiscount')?.value
+                                        }}%</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="review-content">
-                            <div class="photos-grid">
-                                <div *ngFor="let imageUrl of imagePreviewUrls; let i = index" class="photo-preview">
-                                    <img [src]="imageUrl" [alt]="'Car photo ' + (i + 1)">
+
+                        <!-- Location Review -->
+                        <div class="review-card">
+                            <h3 class="review-title">Location</h3>
+                            <div class="location-review">
+                                <span class="location-icon">📍</span>
+                                <span class="location-text">{{ carListingForm.get('location')?.value }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Photos Review -->
+                        <div class="review-card">
+                            <h3 class="review-title">Photos ({{ uploadedImages.length }})</h3>
+                            <div class="photos-review">
+                                <div class="photo-thumbnail" *ngFor="let imageUrl of imagePreviewUrls; let i = index">
+                                    <img [src]="imageUrl" [alt]="'Photo ' + (i + 1)">
+                                    <span class="photo-number">{{ i + 1 }}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Pricing -->
-                    <div class="review-section">
-                        <div class="review-header">
-                            <h3>Pricing</h3>
-                            <button type="button" class="edit-btn" (click)="goToStep(3)">Edit</button>
-                        </div>
-                        <div class="review-content">
-                            <div class="review-item">
-                                <span class="label">Daily Rate:</span>
-                                <span class="value">{{ formatCurrency(carListingForm.get('dailyRate')?.value) }}</span>
-                            </div>
-                            <div class="review-item" *ngIf="carListingForm.get('weeklyDiscount')?.value > 0">
-                                <span class="label">Weekly Discount:</span>
-                                <span class="value">{{ carListingForm.get('weeklyDiscount')?.value }}%</span>
-                            </div>
-                            <div class="review-item" *ngIf="carListingForm.get('monthlyDiscount')?.value > 0">
-                                <span class="label">Monthly Discount:</span>
-                                <span class="value">{{ carListingForm.get('monthlyDiscount')?.value }}%</span>
-                            </div>
-                            <div class="review-item">
-                                <span class="label">Location:</span>
-                                <span class="value">{{ carListingForm.get('location')?.value }}</span>
-                            </div>
-                        </div>
+                <!-- Navigation Buttons -->
+                <div class="form-navigation">
+                    <button type="button" class="nav-btn prev-btn" (click)="previousStep()"
+                        [disabled]="currentStep === 1">
+                        <span class="btn-icon">←</span>
+                        Previous
+                    </button>
+
+                    <div class="nav-center">
+                        <button type="button" class="save-draft-btn" (click)="saveDraft()">
+                            <span class="btn-icon">💾</span>
+                            Save Draft
+                        </button>
                     </div>
-                </div>
-            </div>
 
-            <!-- Navigation Buttons -->
-            <div class="form-navigation">
-                <div class="navigation-buttons">
-                    <button *ngIf="currentStep > 1" type="button" class="btn btn-secondary" (click)="previousStep()">
-                        ← Previous
+                    <button *ngIf="currentStep < totalSteps" type="button" class="nav-btn next-btn" (click)="nextStep()"
+                        [disabled]="!isCurrentStepValid()">
+                        Next
+                        <span class="btn-icon">→</span>
                     </button>
 
-                    <button *ngIf="currentStep < totalSteps" type="button" class="btn btn-primary"
-                        [disabled]="!isCurrentStepValid()" (click)="nextStep()">
-                        Next →
-                    </button>
-
-                    <button *ngIf="currentStep === totalSteps" type="button" class="btn btn-primary"
-                        [disabled]="!isCurrentStepValid() || isSubmitting" (click)="submitListing()">
-                        <span *ngIf="!isSubmitting">Submit Listing</span>
-                        <span *ngIf="isSubmitting">Submitting...</span>
+                    <button *ngIf="currentStep === totalSteps" type="submit" class="nav-btn submit-btn"
+                        [disabled]="!isCurrentStepValid() || isSubmitting" [class.loading]="isSubmitting">
+                        <span class="btn-content" *ngIf="!isSubmitting">
+                            <span class="btn-icon">🚀</span>
+                            Submit Listing
+                        </span>
+                        <span class="btn-content loading" *ngIf="isSubmitting">
+                            <span class="loading-spinner"></span>
+                            Submitting...
+                        </span>
                     </button>
                 </div>
-
-                <div class="draft-actions">
-                    <button type="button" class="btn btn-outline" (click)="saveDraft()">
-                        Save as Draft
-                    </button>
-                </div>
-            </div>
-        </form>
+            </form>
+        </div>
     </div>
 </div>
