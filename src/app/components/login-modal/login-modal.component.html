@@ -1,0 +1,91 @@
+<!-- Login Modal -->
+<div class="modal-overlay" (click)="onBackdropClick($event)" (keydown)="onKeyDown($event)" tabindex="0">
+    <div class="modal-container" role="dialog" aria-labelledby="login-title" aria-modal="true">
+        <!-- Modal Header -->
+        <div class="modal-header">
+            <h2 id="login-title" class="modal-title">
+                Welcome Back to HireMyCar
+            </h2>
+            <button class="close-btn" (click)="closeModal()" aria-label="Close modal">
+                <span class="close-icon">×</span>
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="modal-body">
+            <!-- Error Message -->
+            <div class="error-message" *ngIf="error" role="alert">
+                <span class="error-icon">⚠️</span>
+                <span class="error-text">{{ error.message }}</span>
+            </div>
+
+            <!-- Login Form -->
+            <form (ngSubmit)="onSubmit()" class="login-form" novalidate>
+                <!-- Email Field -->
+                <div class="form-group">
+                    <label for="email" class="form-label">Email Address</label>
+                    <div class="input-container">
+                        <input type="email" id="email" name="email" [(ngModel)]="loginData.email" class="form-input"
+                            placeholder="Enter your email" required autocomplete="email" [disabled]="isLoading">
+                        <span class="input-icon">📧</span>
+                    </div>
+                </div>
+
+                <!-- Password Field -->
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <div class="input-container">
+                        <input [type]="showPassword ? 'text' : 'password'" id="password" name="password"
+                            [(ngModel)]="loginData.password" class="form-input" placeholder="Enter your password"
+                            required autocomplete="current-password" [disabled]="isLoading">
+                        <button type="button" class="password-toggle" (click)="togglePasswordVisibility()"
+                            [disabled]="isLoading" aria-label="Toggle password visibility">
+                            <span class="toggle-icon">{{ showPassword ? '🙈' : '👁️' }}</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Forgot Password Link -->
+                <div class="form-actions">
+                    <a href="#" class="forgot-password-link">Forgot your password?</a>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="submit-btn primary" [disabled]="!isFormValid() || isLoading"
+                    [class.loading]="isLoading">
+                    <span class="btn-content" *ngIf="!isLoading">
+                        <span class="btn-icon">🔑</span>
+                        <span class="btn-text">Sign In</span>
+                    </span>
+                    <span class="btn-content loading" *ngIf="isLoading">
+                        <span class="spinner"></span>
+                        <span class="btn-text">Signing In...</span>
+                    </span>
+                </button>
+            </form>
+
+            <!-- Divider -->
+            <div class="divider">
+                <span class="divider-text">or</span>
+            </div>
+
+            <!-- Social Login -->
+            <div class="social-login">
+                <button type="button" class="social-btn google" (click)="onGoogleSignIn()" [disabled]="isLoading">
+                    <span class="social-icon">🔍</span>
+                    <span class="social-text">Continue with Google</span>
+                </button>
+            </div>
+
+            <!-- Sign Up Link -->
+            <div class="signup-link">
+                <p class="signup-text">
+                    Don't have an account?
+                    <button type="button" class="signup-btn" (click)="onSwitchToSignup()">
+                        Sign up here
+                    </button>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
