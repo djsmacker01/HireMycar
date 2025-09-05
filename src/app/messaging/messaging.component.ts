@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Subject, takeUntil, debounceTime, distinctUntilChanged } from 'rxjs';
 
 // Type Definitions
 interface User {
@@ -8,6 +9,8 @@ interface User {
   name: string;
   avatarUrl: string;
   isOnline: boolean;
+  email?: string;
+  userType?: 'renter' | 'owner' | 'admin';
 }
 
 interface Message {
@@ -15,18 +18,32 @@ interface Message {
   senderId: string;
   content: string;
   timestamp: Date;
-  type: 'text' | 'image' | 'system';
-  status?: 'sent' | 'delivered' | 'read';
+  type: 'text' | 'image' | 'system' | 'booking_request' | 'booking_confirmed' | 'booking_cancelled';
+  status?: 'sent' | 'delivered' | 'read' | 'sending' | 'failed';
   imageUrl?: string;
+  metadata?: {
+    carId?: string;
+    bookingId?: string;
+    amount?: number;
+    duration?: string | number;
+    audioUrl?: string;
+    latitude?: number;
+    longitude?: number;
+    locationUrl?: string;
+  };
 }
 
 interface Conversation {
   id: string;
   user: User;
   carTitle?: string;
+  carId?: string;
   lastMessage: Message;
   unreadCount: number;
   messages: Message[];
+  isArchived?: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 interface ChatState {
@@ -46,7 +63,14 @@ export class MessagingComponent implements OnInit, OnDestroy, AfterViewChecked {
   @ViewChild('messageContainer') messageContainer!: ElementRef;
   @ViewChild('messageInput') messageInput!: ElementRef;
 
-  // Mock Users
+  // RxJS cleanup
+  private destroy$ = new Subject<void>();
+  private searchSubject$ = new Subject<string>();
+
+  // Authentication state (simplified for demo)
+  currentUser: any = null;
+
+  // Mock Users (will be replaced with real data)
   private users: User[] = [
     {
       id: '1',
@@ -95,6 +119,8 @@ export class MessagingComponent implements OnInit, OnDestroy, AfterViewChecked {
         status: 'read'
       },
       unreadCount: 0,
+      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
+      updatedAt: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
       messages: [
         {
           id: 'msg1',
@@ -151,6 +177,8 @@ export class MessagingComponent implements OnInit, OnDestroy, AfterViewChecked {
         status: 'delivered'
       },
       unreadCount: 0,
+      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+      updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
       messages: [
         {
           id: 'msg6',
@@ -176,6 +204,8 @@ export class MessagingComponent implements OnInit, OnDestroy, AfterViewChecked {
         imageUrl: 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=400&h=300&fit=crop'
       },
       unreadCount: 0,
+      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+      updatedAt: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
       messages: [
         {
           id: 'msg7',
@@ -201,6 +231,8 @@ export class MessagingComponent implements OnInit, OnDestroy, AfterViewChecked {
         status: 'read'
       },
       unreadCount: 0,
+      createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000), // 4 days ago
+      updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
       messages: [
         {
           id: 'msg8',
@@ -225,6 +257,8 @@ export class MessagingComponent implements OnInit, OnDestroy, AfterViewChecked {
         status: 'read'
       },
       unreadCount: 2,
+      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000), // 5 days ago
+      updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
       messages: [
         {
           id: 'msg9',
@@ -261,15 +295,45 @@ export class MessagingComponent implements OnInit, OnDestroy, AfterViewChecked {
   // Current User (for demo purposes)
   currentUserId = 'me';
 
-  constructor() {}
+  // Enhanced features
+  showSearchResults = false;
+  searchResults: Conversation[] = [];
+  isSearching = false;
+  showArchivedConversations = false;
+  messageReactions: { [messageId: string]: string[] } = {};
+  quickReplies = [
+    'Yes, it\'s available!',
+    'What time works for you?',
+    'I\'ll send you the location',
+    'Thanks for your interest!',
+    'Let me check and get back to you'
+  ];
+
+  // Modern messaging features
+  isLoadingMessages = false;
+  showReactionPickerForMessage: string | null = null;
+  isVoiceMode = false;
+  isRecording = false;
+  recordingDuration = 0;
+  private recordingInterval: any;
+  private mediaRecorder: MediaRecorder | null = null;
+  private recordedChunks: Blob[] = [];
+
+  constructor() {
+    // Simplified constructor for demo
+  }
 
   ngOnInit(): void {
     console.log('Messaging component initialized');
+    this.initializeSearch();
     this.startTypingSimulation();
     this.startRealTimeUpdates();
   }
 
   ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    
     if (this.typingTimeout) {
       clearTimeout(this.typingTimeout);
     }
@@ -503,25 +567,6 @@ export class MessagingComponent implements OnInit, OnDestroy, AfterViewChecked {
     return message.senderId === this.currentUserId;
   }
 
-  // Get message status icon
-  getStatusIcon(status: string | undefined): string {
-    switch (status) {
-      case 'sent': return '✓';
-      case 'delivered': return '✓✓';
-      case 'read': return '✓✓';
-      default: return '';
-    }
-  }
-
-  // Get message status color
-  getStatusColor(status: string | undefined): string {
-    switch (status) {
-      case 'sent': return 'text-gray-400';
-      case 'delivered': return 'text-gray-500';
-      case 'read': return 'text-blue-500';
-      default: return 'text-gray-400';
-    }
-  }
 
   // Check if should show date separator
   shouldShowDateSeparator(message: Message, index: number): boolean {
@@ -585,6 +630,379 @@ export class MessagingComponent implements OnInit, OnDestroy, AfterViewChecked {
     if (keyboardEvent.key === 'Enter' && !keyboardEvent.shiftKey) {
       event.preventDefault();
       this.sendMessage();
+    }
+  }
+
+  // Auto-resize textarea
+  autoResizeTextarea(event: Event): void {
+    const textarea = event.target as HTMLTextAreaElement;
+    textarea.style.height = 'auto';
+    textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+  }
+
+  // Enhanced Methods (simplified for demo)
+  private initializeAuth(): void {
+    // Simplified for demo - no authentication required
+    this.currentUserId = 'me';
+    this.loadConversations();
+  }
+
+  private initializeSearch(): void {
+    this.searchSubject$.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
+    ).subscribe(query => {
+      this.performSearch(query);
+    });
+  }
+
+  onSearchInput(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.chatState.searchQuery = target.value;
+    this.searchSubject$.next(target.value);
+  }
+
+  private performSearch(query: string): void {
+    if (!query.trim()) {
+      this.showSearchResults = false;
+      this.searchResults = [];
+      return;
+    }
+
+    this.isSearching = true;
+    this.showSearchResults = true;
+
+    // Simulate search delay
+    setTimeout(() => {
+      this.searchResults = this.conversations.filter(conv => 
+        conv.user.name.toLowerCase().includes(query.toLowerCase()) ||
+        (conv.carTitle && conv.carTitle.toLowerCase().includes(query.toLowerCase())) ||
+        conv.messages.some(msg => msg.content.toLowerCase().includes(query.toLowerCase()))
+      );
+      this.isSearching = false;
+    }, 300);
+  }
+
+  private async loadConversations(): Promise<void> {
+    try {
+      // In a real implementation, this would fetch from Supabase
+      // For now, we'll use the mock data
+      console.log('Loading conversations for user:', this.currentUserId);
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+    }
+  }
+
+  // Quick Reply Methods
+  sendQuickReply(reply: string): void {
+    this.newMessage = reply;
+    this.sendMessage();
+  }
+
+  // Message Reactions
+  addReaction(messageId: string, reaction: string): void {
+    if (!this.messageReactions[messageId]) {
+      this.messageReactions[messageId] = [];
+    }
+    this.messageReactions[messageId].push(reaction);
+  }
+
+  removeReaction(messageId: string, reaction: string): void {
+    if (this.messageReactions[messageId]) {
+      const index = this.messageReactions[messageId].indexOf(reaction);
+      if (index > -1) {
+        this.messageReactions[messageId].splice(index, 1);
+      }
+    }
+  }
+
+  getMessageReactions(messageId: string): string[] {
+    return this.messageReactions[messageId] || [];
+  }
+
+  // Conversation Management
+  archiveConversation(conversationId: string): void {
+    const conversation = this.conversations.find(conv => conv.id === conversationId);
+    if (conversation) {
+      conversation.isArchived = true;
+      console.log('Conversation archived:', conversationId);
+    }
+  }
+
+  deleteConversation(conversationId: string): void {
+    const index = this.conversations.findIndex(conv => conv.id === conversationId);
+    if (index > -1) {
+      this.conversations.splice(index, 1);
+      if (this.chatState.activeConversationId === conversationId) {
+        this.chatState.activeConversationId = '';
+      }
+      console.log('Conversation deleted:', conversationId);
+    }
+  }
+
+  toggleArchivedConversations(): void {
+    this.showArchivedConversations = !this.showArchivedConversations;
+  }
+
+  // Enhanced message sending with metadata
+  sendBookingRequest(carId: string, amount: number, duration: string): void {
+    const activeConv = this.activeConversation;
+    if (!activeConv) return;
+
+    const message: Message = {
+      id: Date.now().toString(),
+      senderId: this.currentUserId,
+      content: `I'd like to book this car for ${duration} at ₦${amount.toLocaleString()}`,
+      timestamp: new Date(),
+      type: 'booking_request',
+      status: 'sent',
+      metadata: {
+        carId,
+        amount,
+        duration
+      }
+    };
+
+    activeConv.messages.push(message);
+    activeConv.lastMessage = message;
+    this.newMessage = '';
+
+    console.log('Booking request sent:', message);
+  }
+
+  // Message forwarding
+  forwardMessage(messageId: string, targetConversationId: string): void {
+    const activeConv = this.activeConversation;
+    if (!activeConv) return;
+
+    const message = activeConv.messages.find(msg => msg.id === messageId);
+    if (!message) return;
+
+    const targetConv = this.conversations.find(conv => conv.id === targetConversationId);
+    if (!targetConv) return;
+
+    const forwardedMessage: Message = {
+      ...message,
+      id: Date.now().toString(),
+      timestamp: new Date(),
+      status: 'sent'
+    };
+
+    targetConv.messages.push(forwardedMessage);
+    targetConv.lastMessage = forwardedMessage;
+
+    console.log('Message forwarded:', forwardedMessage);
+  }
+
+  // Enhanced message status tracking
+  markMessageAsRead(messageId: string): void {
+    const activeConv = this.activeConversation;
+    if (!activeConv) return;
+
+    const message = activeConv.messages.find(msg => msg.id === messageId);
+    if (message && message.senderId !== this.currentUserId) {
+      message.status = 'read';
+    }
+  }
+
+  // Get conversation statistics
+  getConversationStats(): { total: number, unread: number, archived: number } {
+    return {
+      total: this.conversations.length,
+      unread: this.conversations.reduce((sum, conv) => sum + conv.unreadCount, 0),
+      archived: this.conversations.filter(conv => conv.isArchived).length
+    };
+  }
+
+  // Modern messaging features
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  onInputFocus(): void {
+    // Add focus effects or analytics
+    console.log('Input focused');
+  }
+
+  onInputBlur(): void {
+    // Add blur effects or analytics
+    console.log('Input blurred');
+  }
+
+  showReactionPicker(messageId: string): void {
+    this.showReactionPickerForMessage = messageId;
+  }
+
+  retryMessage(messageId: string): void {
+    const activeConv = this.activeConversation;
+    if (!activeConv) return;
+
+    const message = activeConv.messages.find(msg => msg.id === messageId);
+    if (message) {
+      message.status = 'sending';
+      // Simulate retry
+      setTimeout(() => {
+        message.status = 'delivered';
+        setTimeout(() => {
+          message.status = 'read';
+        }, 1000);
+      }, 1000);
+    }
+  }
+
+  startVoiceRecording(): void {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      console.log('Voice recording not supported');
+      return;
+    }
+
+    navigator.mediaDevices.getUserMedia({ audio: true })
+      .then(stream => {
+        this.mediaRecorder = new MediaRecorder(stream);
+        this.recordedChunks = [];
+
+        this.mediaRecorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            this.recordedChunks.push(event.data);
+          }
+        };
+
+        this.mediaRecorder.start();
+        this.isRecording = true;
+        this.recordingDuration = 0;
+
+        this.recordingInterval = setInterval(() => {
+          this.recordingDuration++;
+        }, 1000);
+
+        console.log('Voice recording started');
+      })
+      .catch(error => {
+        console.error('Error accessing microphone:', error);
+      });
+  }
+
+  cancelRecording(): void {
+    if (this.mediaRecorder && this.mediaRecorder.state === 'recording') {
+      this.mediaRecorder.stop();
+      this.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+    }
+    
+    this.isRecording = false;
+    this.recordingDuration = 0;
+    this.recordedChunks = [];
+    
+    if (this.recordingInterval) {
+      clearInterval(this.recordingInterval);
+    }
+    
+    console.log('Voice recording cancelled');
+  }
+
+  sendVoiceMessage(): void {
+    if (this.mediaRecorder && this.recordedChunks.length > 0) {
+      const blob = new Blob(this.recordedChunks, { type: 'audio/webm' });
+      const audioUrl = URL.createObjectURL(blob);
+      
+      // Create voice message
+      const activeConv = this.activeConversation;
+      if (activeConv) {
+        const message: Message = {
+          id: Date.now().toString(),
+          senderId: this.currentUserId,
+          content: `Voice message (${this.recordingDuration}s)`,
+          timestamp: new Date(),
+          type: 'text', // In a real app, this would be 'voice'
+          status: 'sent',
+          metadata: {
+            audioUrl: audioUrl,
+            duration: this.recordingDuration
+          }
+        };
+
+        activeConv.messages.push(message);
+        activeConv.lastMessage = message;
+        activeConv.unreadCount = 0;
+      }
+    }
+
+    this.cancelRecording();
+    console.log('Voice message sent');
+  }
+
+  shareLocation(): void {
+    if (!navigator.geolocation) {
+      console.log('Geolocation not supported');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const locationUrl = `https://maps.google.com/?q=${latitude},${longitude}`;
+        
+        const activeConv = this.activeConversation;
+        if (activeConv) {
+          const message: Message = {
+            id: Date.now().toString(),
+            senderId: this.currentUserId,
+            content: '📍 Shared location',
+            timestamp: new Date(),
+            type: 'text',
+            status: 'sent',
+            metadata: {
+              latitude,
+              longitude,
+              locationUrl
+            }
+          };
+
+          activeConv.messages.push(message);
+          activeConv.lastMessage = message;
+          activeConv.unreadCount = 0;
+        }
+        
+        console.log('Location shared:', { latitude, longitude });
+      },
+      (error) => {
+        console.error('Error getting location:', error);
+      }
+    );
+  }
+
+  // Simulate loading messages
+  simulateLoadingMessages(): void {
+    this.isLoadingMessages = true;
+    setTimeout(() => {
+      this.isLoadingMessages = false;
+    }, 1500);
+  }
+
+  // Enhanced message status tracking
+  getStatusIcon(status: string | undefined): string {
+    switch (status) {
+      case 'sent': return '✓';
+      case 'delivered': return '✓✓';
+      case 'read': return '✓✓';
+      case 'sending': return '⏳';
+      case 'failed': return '❌';
+      default: return '';
+    }
+  }
+
+  getStatusColor(status: string | undefined): string {
+    switch (status) {
+      case 'sent': return 'text-gray-400';
+      case 'delivered': return 'text-gray-500';
+      case 'read': return 'text-blue-500';
+      case 'sending': return 'text-yellow-500';
+      case 'failed': return 'text-red-500';
+      default: return 'text-gray-400';
     }
   }
 } 

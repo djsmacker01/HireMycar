@@ -1,48 +1,192 @@
-<div class="messaging-container">
+<div class="messaging-container" [class.mobile-conversation-view]="!activeConversation"
+    [class.mobile-chat-view]="activeConversation">
     <!-- Left Panel - Conversation List -->
-    <div class="conversation-panel">
+    <div class="conversation-panel" [class.mobile-hidden]="activeConversation">
         <div class="conversation-header">
-            <h2>Messages</h2>
+            <div class="header-top">
+                <h1 class="app-title">Messages</h1>
+                <div class="header-actions">
+                    <button class="action-btn" title="New message">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M12 5v14M5 12h14" />
+                        </svg>
+                    </button>
+                    <button class="action-btn" title="Settings">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="3" />
+                            <path
+                                d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
             <div class="search-container">
-                <input type="text" placeholder="Search conversations..." [(ngModel)]="chatState.searchQuery"
-                    class="search-input">
-                <span class="search-icon">🔍</span>
+                <div class="search-input-wrapper">
+                    <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8" />
+                        <path d="m21 21-4.35-4.35" />
+                    </svg>
+                    <input type="text" placeholder="Search conversations..." [(ngModel)]="chatState.searchQuery"
+                        (input)="onSearchInput($event)" class="search-input">
+                    <div class="search-loading" *ngIf="isSearching">
+                        <div class="loading-spinner"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="conversation-tabs">
+                <button class="tab-btn" [class.active]="!showArchivedConversations"
+                    (click)="showArchivedConversations = false">
+                    <span class="tab-text">Active</span>
+                    <span class="tab-count">{{ getConversationStats().total - getConversationStats().archived }}</span>
+                </button>
+                <button class="tab-btn" [class.active]="showArchivedConversations"
+                    (click)="toggleArchivedConversations()">
+                    <span class="tab-text">Archived</span>
+                    <span class="tab-count">{{ getConversationStats().archived }}</span>
+                </button>
             </div>
         </div>
 
         <div class="conversation-list">
-            <div *ngFor="let conversation of filteredConversations; trackBy: trackByConversationId"
-                class="conversation-item" [class.active]="conversation.id === chatState.activeConversationId"
-                (click)="selectConversation(conversation.id)">
-
-                <div class="conversation-avatar">
-                    <img [src]="conversation.user.avatarUrl" [alt]="conversation.user.name">
-                    <div class="online-status" [class.online]="conversation.user.isOnline"></div>
+            <!-- Search Results -->
+            <div *ngIf="showSearchResults && searchResults.length > 0" class="search-results">
+                <div class="search-results-header">
+                    <span class="results-count">{{ searchResults.length }} results</span>
+                    <button class="close-search" (click)="showSearchResults = false">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
                 </div>
-
-                <div class="conversation-content">
-                    <div class="conversation-header">
-                        <h4 class="conversation-name">{{ conversation.user.name }}</h4>
-                        <span class="conversation-time">{{ formatTimestamp(conversation.lastMessage.timestamp) }}</span>
-                    </div>
-
-                    <div class="conversation-preview">
-                        <div class="car-title" *ngIf="conversation.carTitle">{{ conversation.carTitle }}</div>
-                        <div class="message-preview">
-                            <span class="message-icon" *ngIf="conversation.lastMessage.type === 'image'">📷</span>
-                            <span class="message-icon" *ngIf="conversation.lastMessage.type === 'system'">🔔</span>
-                            <span class="message-text">{{ conversation.lastMessage.content }}</span>
+                <div class="results-list">
+                    <div *ngFor="let conversation of searchResults; trackBy: trackByConversationId"
+                        class="conversation-item search-result"
+                        [class.active]="conversation.id === chatState.activeConversationId"
+                        (click)="selectConversation(conversation.id); showSearchResults = false">
+                        <div class="conversation-avatar">
+                            <img [src]="conversation.user.avatarUrl" [alt]="conversation.user.name">
+                            <div class="online-indicator" [class.online]="conversation.user.isOnline"></div>
+                        </div>
+                        <div class="conversation-details">
+                            <div class="conversation-info">
+                                <h4 class="user-name">{{ conversation.user.name }}</h4>
+                                <span class="timestamp">{{ formatTimestamp(conversation.lastMessage.timestamp) }}</span>
+                            </div>
+                            <div class="message-info">
+                                <div class="car-info" *ngIf="conversation.carTitle">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <path
+                                            d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10V6c0-2-2-4-4-4H4c-2 0-4 2-4 4v10c0 .6.4 1 1 1h2" />
+                                        <circle cx="7" cy="17" r="2" />
+                                        <path d="M15 17h-6" />
+                                        <circle cx="17" cy="17" r="2" />
+                                    </svg>
+                                    <span>{{ conversation.carTitle }}</span>
+                                </div>
+                                <div class="last-message">
+                                    <span class="message-type-icon" *ngIf="conversation.lastMessage.type === 'image'">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                            <circle cx="8.5" cy="8.5" r="1.5" />
+                                            <polyline points="21,15 16,10 5,21" />
+                                        </svg>
+                                    </span>
+                                    <span class="message-type-icon" *ngIf="conversation.lastMessage.type === 'system'">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10" />
+                                            <line x1="12" y1="8" x2="12" y2="12" />
+                                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                                        </svg>
+                                    </span>
+                                    <span class="message-content">{{ conversation.lastMessage.content }}</span>
+                                </div>
+                            </div>
+                            <div class="conversation-meta">
+                                <div class="message-status" *ngIf="conversation.lastMessage.senderId === currentUserId">
+                                    <span [class]="getStatusColor(conversation.lastMessage.status)">
+                                        {{ getStatusIcon(conversation.lastMessage.status) }}
+                                    </span>
+                                </div>
+                                <div class="unread-count" *ngIf="conversation.unreadCount > 0">
+                                    {{ conversation.unreadCount > 9 ? '9+' : conversation.unreadCount }}
+                                </div>
+                            </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <div class="conversation-footer">
-                        <div class="message-status" *ngIf="conversation.lastMessage.senderId === currentUserId">
-                            <span [class]="getStatusColor(conversation.lastMessage.status)">
-                                {{ getStatusIcon(conversation.lastMessage.status) }}
-                            </span>
+            <!-- Regular Conversations -->
+            <div class="conversations-list" *ngIf="!showSearchResults">
+                <div *ngFor="let conversation of filteredConversations; trackBy: trackByConversationId"
+                    class="conversation-item" [class.active]="conversation.id === chatState.activeConversationId"
+                    [class.archived]="conversation.isArchived" [class.unread]="conversation.unreadCount > 0"
+                    (click)="selectConversation(conversation.id)">
+
+                    <div class="conversation-avatar">
+                        <img [src]="conversation.user.avatarUrl" [alt]="conversation.user.name">
+                        <div class="online-indicator" [class.online]="conversation.user.isOnline"></div>
+                    </div>
+
+                    <div class="conversation-details">
+                        <div class="conversation-info">
+                            <h4 class="user-name">{{ conversation.user.name }}</h4>
+                            <span class="timestamp">{{ formatTimestamp(conversation.lastMessage.timestamp) }}</span>
                         </div>
-                        <div class="unread-badge" *ngIf="conversation.unreadCount > 0">
-                            {{ conversation.unreadCount }}
+
+                        <div class="message-info">
+                            <div class="car-info" *ngIf="conversation.carTitle">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path
+                                        d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10V6c0-2-2-4-4-4H4c-2 0-4 2-4 4v10c0 .6.4 1 1 1h2" />
+                                    <circle cx="7" cy="17" r="2" />
+                                    <path d="M15 17h-6" />
+                                    <circle cx="17" cy="17" r="2" />
+                                </svg>
+                                <span>{{ conversation.carTitle }}</span>
+                            </div>
+                            <div class="last-message">
+                                <span class="message-type-icon" *ngIf="conversation.lastMessage.type === 'image'">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                        <circle cx="8.5" cy="8.5" r="1.5" />
+                                        <polyline points="21,15 16,10 5,21" />
+                                    </svg>
+                                </span>
+                                <span class="message-type-icon" *ngIf="conversation.lastMessage.type === 'system'">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2">
+                                        <circle cx="12" cy="12" r="10" />
+                                        <line x1="12" y1="8" x2="12" y2="12" />
+                                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                                    </svg>
+                                </span>
+                                <span class="message-content">{{ conversation.lastMessage.content }}</span>
+                            </div>
+                        </div>
+
+                        <div class="conversation-meta">
+                            <div class="message-status" *ngIf="conversation.lastMessage.senderId === currentUserId">
+                                <span [class]="getStatusColor(conversation.lastMessage.status)">
+                                    {{ getStatusIcon(conversation.lastMessage.status) }}
+                                </span>
+                            </div>
+                            <div class="unread-count" *ngIf="conversation.unreadCount > 0">
+                                {{ conversation.unreadCount > 9 ? '9+' : conversation.unreadCount }}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -51,85 +195,233 @@
     </div>
 
     <!-- Right Panel - Chat View -->
-    <div class="chat-panel" *ngIf="activeConversation">
+    <div class="chat-panel" [class.mobile-hidden]="!activeConversation" *ngIf="activeConversation">
+        <!-- Mobile Back Button -->
+        <button class="mobile-back-btn" (click)="selectConversation('')">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15,18 9,12 15,6" />
+            </svg>
+            <span>Back</span>
+        </button>
+
         <!-- Chat Header -->
         <div class="chat-header">
             <div class="chat-user-info">
                 <div class="chat-avatar">
                     <img [src]="activeConversation.user.avatarUrl" [alt]="activeConversation.user.name">
-                    <div class="online-status" [class.online]="activeConversation.user.isOnline"></div>
+                    <div class="online-indicator" [class.online]="activeConversation.user.isOnline"></div>
                 </div>
                 <div class="chat-details">
-                    <h3 class="chat-name">{{ activeConversation.user.name }}</h3>
-                    <div class="chat-subtitle">
-                        <span class="online-text" *ngIf="activeConversation.user.isOnline">Online</span>
-                        <span class="car-title" *ngIf="activeConversation.carTitle">{{ activeConversation.carTitle
-                            }}</span>
+                    <h3 class="user-name">{{ activeConversation.user.name }}</h3>
+                    <div class="user-status">
+                        <span class="status-text" [class.online]="activeConversation.user.isOnline">
+                            {{ activeConversation.user.isOnline ? 'Online' : 'Offline' }}
+                        </span>
+                        <span class="separator"
+                            *ngIf="activeConversation.user.isOnline && activeConversation.carTitle">•</span>
+                        <span class="car-title" *ngIf="activeConversation.carTitle">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <path
+                                    d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9L18 10V6c0-2-2-4-4-4H4c-2 0-4 2-4 4v10c0 .6.4 1 1 1h2" />
+                                <circle cx="7" cy="17" r="2" />
+                                <path d="M15 17h-6" />
+                                <circle cx="17" cy="17" r="2" />
+                            </svg>
+                            {{ activeConversation.carTitle }}
+                        </span>
                     </div>
                 </div>
             </div>
             <div class="chat-actions">
-                <button class="btn btn-icon" title="More options">⋮</button>
+                <button class="action-btn" title="Voice call">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path
+                            d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z" />
+                    </svg>
+                </button>
+                <button class="action-btn" title="Video call">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="23 7 16 12 23 17 23 7" />
+                        <rect x="1" y="5" width="15" height="14" rx="2" ry="2" />
+                    </svg>
+                </button>
+                <div class="dropdown">
+                    <button class="action-btn" title="More options">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="1" />
+                            <circle cx="12" cy="5" r="1" />
+                            <circle cx="12" cy="19" r="1" />
+                        </svg>
+                    </button>
+                    <div class="dropdown-menu">
+                        <button class="dropdown-item" (click)="archiveConversation(activeConversation.id)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="21,8 21,21 3,21 3,8" />
+                                <rect x="1" y="3" width="22" height="5" />
+                                <line x1="10" y1="12" x2="14" y2="12" />
+                            </svg>
+                            Archive
+                        </button>
+                        <button class="dropdown-item delete" (click)="deleteConversation(activeConversation.id)">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                stroke-width="2">
+                                <polyline points="3,6 5,6 21,6" />
+                                <path
+                                    d="M19,6v14a2,2,0,0,1-2,2H7a2,2,0,0,1-2-2V6m3,0V4a2,2,0,0,1,2-2h4a2,2,0,0,1,2,2V6" />
+                                <line x1="10" y1="11" x2="10" y2="17" />
+                                <line x1="14" y1="11" x2="14" y2="17" />
+                            </svg>
+                            Delete
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
         <!-- Messages Container -->
         <div class="messages-container" #messageContainer>
             <div class="messages-list">
-                <div *ngFor="let message of activeConversation.messages; let i = index; trackBy: trackByMessageId"
-                    class="message-wrapper" [class.own-message]="isOwnMessage(message)">
+                <!-- Loading Skeleton (when loading messages) -->
+                <div class="skeleton-messages" *ngIf="isLoadingMessages">
+                    <div class="skeleton-message received"></div>
+                    <div class="skeleton-message own"></div>
+                    <div class="skeleton-message received"></div>
+                    <div class="skeleton-message own"></div>
+                </div>
 
-                    <!-- Date Separator -->
-                    <div class="date-separator" *ngIf="shouldShowDateSeparator(message, i)">
-                        <span class="date-text">{{ getDateSeparatorText(message.timestamp) }}</span>
-                    </div>
+                <!-- Actual Messages -->
+                <div *ngIf="!isLoadingMessages">
+                    <div *ngFor="let message of activeConversation.messages; let i = index; trackBy: trackByMessageId"
+                        class="message-wrapper" [class.own-message]="isOwnMessage(message)">
 
-                    <!-- Message Bubble -->
-                    <div class="message-bubble" [class]="'message-' + message.type">
-                        <div class="message-content">
-                            <!-- Text Message -->
-                            <div class="message-text" *ngIf="message.type === 'text'">
-                                {{ message.content }}
-                            </div>
+                        <!-- Date Separator -->
+                        <div class="date-separator" *ngIf="shouldShowDateSeparator(message, i)">
+                            <span class="date-text">{{ getDateSeparatorText(message.timestamp) }}</span>
+                        </div>
 
-                            <!-- Image Message -->
-                            <div class="message-image" *ngIf="message.type === 'image'">
-                                <img [src]="message.imageUrl" [alt]="message.content"
-                                    (click)="openImageModal(message.imageUrl)">
-                            </div>
+                        <!-- Message Bubble -->
+                        <div class="message-bubble" [class]="'message-' + message.type"
+                            [class.sending]="message.status === 'sending'" [class.failed]="message.status === 'failed'">
 
-                            <!-- System Message -->
-                            <div class="message-system" *ngIf="message.type === 'system'">
-                                <span class="system-icon">🔔</span>
-                                <span class="system-text">{{ message.content }}</span>
-                            </div>
+                            <!-- Message Content -->
+                            <div class="message-content">
+                                <!-- Text Message -->
+                                <div class="message-text" *ngIf="message.type === 'text'">
+                                    {{ message.content }}
+                                </div>
 
-                            <!-- Message Time and Status -->
-                            <div class="message-footer">
-                                <span class="message-time">{{ formatMessageTime(message.timestamp) }}</span>
-                                <span *ngIf="isOwnMessage(message)" class="message-status"
-                                    [class]="getStatusColor(message.status)">
-                                    {{ getStatusIcon(message.status) }}
-                                </span>
+                                <!-- Image Message -->
+                                <div class="message-image" *ngIf="message.type === 'image'">
+                                    <img [src]="message.imageUrl" [alt]="message.content"
+                                        (click)="openImageModal(message.imageUrl)" loading="lazy">
+                                    <div class="image-overlay" *ngIf="message.status === 'sending'">
+                                        <div class="loading-spinner small"></div>
+                                    </div>
+                                </div>
+
+                                <!-- System Message -->
+                                <div class="message-system" *ngIf="message.type === 'system'">
+                                    <span class="system-icon">🔔</span>
+                                    <span class="system-text">{{ message.content }}</span>
+                                </div>
+
+                                <!-- Booking Request Message -->
+                                <div class="message-booking" *ngIf="message.type === 'booking_request'">
+                                    <div class="booking-header">
+                                        <span class="booking-icon">📋</span>
+                                        <span class="booking-title">Booking Request</span>
+                                    </div>
+                                    <div class="booking-details">
+                                        <div class="booking-item">
+                                            <span class="booking-label">Duration:</span>
+                                            <span class="booking-value">{{ message.metadata?.duration }}</span>
+                                        </div>
+                                        <div class="booking-item">
+                                            <span class="booking-label">Amount:</span>
+                                            <span class="booking-value">₦{{ message.metadata?.amount?.toLocaleString()
+                                                }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="booking-actions">
+                                        <button class="booking-btn accept"
+                                            (click)="sendQuickReply('Booking confirmed!')">
+                                            Accept
+                                        </button>
+                                        <button class="booking-btn decline"
+                                            (click)="sendQuickReply('Sorry, not available at that time.')">
+                                            Decline
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Message Reactions -->
+                                <div class="message-reactions" *ngIf="getMessageReactions(message.id).length > 0">
+                                    <span *ngFor="let reaction of getMessageReactions(message.id)" class="reaction"
+                                        (click)="removeReaction(message.id, reaction)">
+                                        {{ reaction }}
+                                    </span>
+                                    <button class="add-reaction-btn" (click)="showReactionPicker(message.id)">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <line x1="12" y1="5" x2="12" y2="19" />
+                                            <line x1="5" y1="12" x2="19" y2="12" />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                <!-- Message Time and Status -->
+                                <div class="message-footer">
+                                    <span class="message-time">{{ formatMessageTime(message.timestamp) }}</span>
+                                    <div class="message-status-container" *ngIf="isOwnMessage(message)">
+                                        <span class="message-status" [class]="getStatusColor(message.status)">
+                                            {{ getStatusIcon(message.status) }}
+                                        </span>
+                                        <button class="retry-btn" *ngIf="message.status === 'failed'"
+                                            (click)="retryMessage(message.id)" title="Retry sending">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2">
+                                                <polyline points="23,4 23,10 17,10" />
+                                                <polyline points="1,20 1,14 7,14" />
+                                                <path
+                                                    d="M20.49,9A9,9,0,0,0,5.64,5.64L1,10m22,4L18.36,18.36A9,9,0,0,1,3.51,15" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Typing Indicator -->
-                <div class="typing-indicator" *ngIf="chatState.isTyping">
-                    <div class="typing-avatar">
-                        <img [src]="activeConversation.user.avatarUrl" [alt]="activeConversation.user.name">
-                    </div>
-                    <div class="typing-bubble">
-                        <div class="typing-dots">
-                            <span></span>
-                            <span></span>
-                            <span></span>
+                    <!-- Typing Indicator -->
+                    <div class="typing-indicator" *ngIf="chatState.isTyping">
+                        <div class="typing-avatar">
+                            <img [src]="activeConversation.user.avatarUrl" [alt]="activeConversation.user.name">
                         </div>
-                        <span class="typing-text">{{ activeConversation.user.name }} is typing...</span>
+                        <div class="typing-bubble">
+                            <div class="typing-dots">
+                                <span></span>
+                                <span></span>
+                                <span></span>
+                            </div>
+                            <span class="typing-text">{{ activeConversation.user.name }} is typing...</span>
+                        </div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Quick Replies -->
+        <div class="quick-replies" *ngIf="activeConversation && !newMessage.trim()">
+            <div class="quick-replies-header">
+                <span>Quick Replies</span>
+            </div>
+            <div class="quick-replies-list">
+                <button *ngFor="let reply of quickReplies" class="quick-reply-btn" (click)="sendQuickReply(reply)">
+                    {{ reply }}
+                </button>
             </div>
         </div>
 
@@ -138,41 +430,170 @@
             <!-- File Preview -->
             <div class="file-preview" *ngIf="selectedFile">
                 <div class="file-info">
-                    <span class="file-name">{{ selectedFile.name }}</span>
-                    <button class="remove-file" (click)="removeSelectedFile()">×</button>
+                    <div class="file-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14,2 14,8 20,8" />
+                        </svg>
+                    </div>
+                    <div class="file-details">
+                        <span class="file-name">{{ selectedFile.name }}</span>
+                        <span class="file-size">{{ formatFileSize(selectedFile.size) }}</span>
+                    </div>
+                    <button class="remove-file" (click)="removeSelectedFile()" title="Remove file">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
                 </div>
             </div>
 
-            <div class="input-wrapper">
-                <div class="input-actions">
-                    <button class="btn btn-icon" (click)="toggleEmojiPicker()" title="Add emoji">
-                        😊
+            <!-- Floating Action Buttons -->
+            <div class="floating-actions" *ngIf="!newMessage.trim() && !selectedFile">
+                <button class="floating-btn" (click)="toggleEmojiPicker()" title="Add emoji">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                        <line x1="9" y1="9" x2="9.01" y2="9" />
+                        <line x1="15" y1="9" x2="15.01" y2="9" />
+                    </svg>
+                </button>
+                <label class="floating-btn file-input-label" title="Attach photo">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                        <circle cx="8.5" cy="8.5" r="1.5" />
+                        <polyline points="21,15 16,10 5,21" />
+                    </svg>
+                    <input type="file" accept="image/*" (change)="onFileSelected($event)" class="file-input">
+                </label>
+                <button class="floating-btn" title="Voice message" (click)="startVoiceRecording()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+                        <path d="M19 10v2a7 7 0 01-14 0v-2" />
+                        <line x1="12" y1="19" x2="12" y2="23" />
+                        <line x1="8" y1="23" x2="16" y2="23" />
+                    </svg>
+                </button>
+                <button class="floating-btn" title="Location" (click)="shareLocation()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+                        <circle cx="12" cy="10" r="3" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Main Input Area -->
+            <div class="input-wrapper" [class.has-content]="newMessage.trim() || selectedFile">
+                <div class="input-actions" *ngIf="newMessage.trim() || selectedFile">
+                    <button class="action-btn" (click)="toggleEmojiPicker()" title="Add emoji">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+                            <line x1="9" y1="9" x2="9.01" y2="9" />
+                            <line x1="15" y1="9" x2="15.01" y2="9" />
+                        </svg>
                     </button>
-                    <label class="btn btn-icon file-input-label" title="Attach photo">
-                        📷
+                    <label class="action-btn file-input-label" title="Attach photo">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                            <circle cx="8.5" cy="8.5" r="1.5" />
+                            <polyline points="21,15 16,10 5,21" />
+                        </svg>
                         <input type="file" accept="image/*" (change)="onFileSelected($event)" class="file-input">
                     </label>
                 </div>
 
                 <div class="input-field">
                     <textarea #messageInput [(ngModel)]="newMessage" placeholder="Type a message..."
-                        class="message-textarea" rows="1" (keydown.enter)="onKeyDown($event)">
-          </textarea>
+                        class="message-textarea" rows="1" (keydown.enter)="onKeyDown($event)"
+                        (input)="autoResizeTextarea($event)" (focus)="onInputFocus()" (blur)="onInputBlur()">
+                    </textarea>
                 </div>
 
-                <button class="btn btn-send" [disabled]="(!newMessage.trim() && !selectedFile) || isSending"
-                    (click)="sendMessage()">
-                    <span *ngIf="!isSending">📤</span>
-                    <span *ngIf="isSending" class="sending-spinner">⏳</span>
+                <button class="send-btn" [disabled]="(!newMessage.trim() && !selectedFile) || isSending"
+                    [class.sending]="isSending" [class.voice-mode]="isVoiceMode" (click)="sendMessage()">
+                    <svg *ngIf="!isSending && !isVoiceMode" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <line x1="22" y1="2" x2="11" y2="13" />
+                        <polygon points="22,2 15,22 11,13 2,9 22,2" />
+                    </svg>
+                    <svg *ngIf="isVoiceMode" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2">
+                        <path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z" />
+                        <path d="M19 10v2a7 7 0 01-14 0v-2" />
+                        <line x1="12" y1="19" x2="12" y2="23" />
+                        <line x1="8" y1="23" x2="16" y2="23" />
+                    </svg>
+                    <div *ngIf="isSending" class="loading-spinner small"></div>
                 </button>
+            </div>
+
+            <!-- Voice Recording Indicator -->
+            <div class="voice-recording" *ngIf="isRecording">
+                <div class="recording-indicator">
+                    <div class="recording-dot"></div>
+                    <span>Recording...</span>
+                </div>
+                <div class="recording-actions">
+                    <button class="recording-btn cancel" (click)="cancelRecording()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
+                    <button class="recording-btn send" (click)="sendVoiceMessage()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13" />
+                            <polygon points="22,2 15,22 11,13 2,9 22,2" />
+                        </svg>
+                    </button>
+                </div>
             </div>
 
             <!-- Emoji Picker -->
             <div class="emoji-picker" *ngIf="showEmojiPicker">
+                <div class="emoji-header">
+                    <span>Frequently used</span>
+                    <button class="close-emoji" (click)="showEmojiPicker = false">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
+                </div>
                 <div class="emoji-grid">
-                    <button *ngFor="let emoji of ['😊', '👍', '❤️', '🎉', '🚗', '💰', '✅', '❌', '⏰', '📍', '📞', '📧']"
+                    <button
+                        *ngFor="let emoji of ['😊', '😄', '😂', '😍', '🤔', '😢', '😭', '😎', '👍', '🙏', '❤️', '🎉', '💯', '🔥', '✅', '❌', '👏', '🎊', '💪', '🚀', '⭐', '💯', '🔥', '❤️', '💕', '💖', '💗', '💘', '💙', '💚', '💛', '🧡', '💜', '🖤', '🤍', '🤎']"
                         class="emoji-btn" (click)="addEmoji(emoji)">
                         {{ emoji }}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Reaction Picker -->
+            <div class="reaction-picker" *ngIf="showReactionPickerForMessage">
+                <div class="reaction-header">
+                    <span>Add reaction</span>
+                    <button class="close-reaction" (click)="showReactionPickerForMessage = null">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="reaction-grid">
+                    <button *ngFor="let reaction of ['👍', '👎', '❤️', '😂', '😮', '😢', '😡', '🎉']"
+                        class="reaction-btn" (click)="addReaction(showReactionPickerForMessage, reaction)">
+                        {{ reaction }}
                     </button>
                 </div>
             </div>
@@ -182,22 +603,42 @@
     <!-- Empty State -->
     <div class="empty-state" *ngIf="!activeConversation">
         <div class="empty-content">
-            <div class="empty-icon">💬</div>
-            <h3>Select a conversation</h3>
-            <p>Choose a conversation from the list to start messaging</p>
+            <div class="empty-illustration">
+                <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+                    <circle cx="12" cy="11" r="2" />
+                    <circle cx="16" cy="11" r="2" />
+                    <circle cx="8" cy="11" r="2" />
+                </svg>
+            </div>
+            <div class="empty-text">
+                <h2>Welcome to Messages</h2>
+                <p>Select a conversation to start chatting or create a new conversation to get started.</p>
+            </div>
+            <button class="start-chat-btn">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M5 12h14" />
+                </svg>
+                Start New Chat
+            </button>
         </div>
     </div>
-
-    <!-- Mobile Back Button -->
-    <button class="mobile-back-btn" *ngIf="activeConversation" (click)="selectConversation('')">
-        ← Back
-    </button>
 </div>
 
 <!-- Image Modal -->
 <div class="image-modal" *ngIf="false" (click)="closeImageModal()">
-    <div class="modal-content" (click)="$event.stopPropagation()">
-        <img [src]="''" alt="Full size image">
-        <button class="modal-close" (click)="closeImageModal()">×</button>
+    <div class="modal-overlay" (click)="closeImageModal()"></div>
+    <div class="modal-content">
+        <div class="modal-header">
+            <button class="modal-close" (click)="closeImageModal()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body">
+            <img [src]="''" alt="Full size image">
+        </div>
     </div>
 </div>
