@@ -2,6 +2,11 @@ import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
+import { AuthService } from '../services/auth.service';
+import { UserProfile, AuthState } from '../interfaces/auth.interface';
+import { LoginModalComponent } from '../components/login-modal/login-modal.component';
+import { SignupModalComponent } from '../components/signup-modal/signup-modal.component';
 
 // Interfaces
 interface NavigationItem {
@@ -11,13 +16,7 @@ interface NavigationItem {
   icon?: string;
   badge?: number;
   isActive?: boolean;
-  isVisible: (userRole: UserRole) => boolean;
-}
-
-interface UserRole {
-  type: 'guest' | 'renter' | 'owner' | 'admin';
-  isAuthenticated: boolean;
-  permissions: string[];
+  isVisible: (authState: AuthState) => boolean;
 }
 
 interface NotificationCount {
@@ -26,19 +25,10 @@ interface NotificationCount {
   system: number;
 }
 
-interface UserProfile {
-  id: string;
-  name: string;
-  email: string;
-  avatar: string;
-  role: UserRole;
-  isOnline: boolean;
-}
-
 @Component({
   selector: 'app-navigation',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, LoginModalComponent, SignupModalComponent],
   templateUrl: './navigation.component.html',
   styleUrls: ['./navigation.component.scss']
 })
@@ -50,13 +40,17 @@ export class NavigationComponent implements OnInit, OnDestroy {
   isScrolled = false;
   searchQuery = '';
 
-  // Mock Authentication State
-  currentUser: UserProfile | null = null;
-  userRole: UserRole = {
-    type: 'guest',
-    isAuthenticated: false,
-    permissions: []
+  // Authentication State
+  authState: AuthState = {
+    user: null,
+    profile: null,
+    isLoading: true,
+    isAuthenticated: false
   };
+
+  // Modal State
+  showLoginModal = false;
+  showSignupModal = false;
 
   // Mock Notification Count
   notificationCount: NotificationCount = {
@@ -64,6 +58,8 @@ export class NavigationComponent implements OnInit, OnDestroy {
     bookings: 1,
     system: 0
   };
+
+  private destroy$ = new Subject<void>();
 
   // Navigation Items
   primaryNavItems: NavigationItem[] = [
@@ -85,8 +81,8 @@ export class NavigationComponent implements OnInit, OnDestroy {
       id: 'list-car',
       label: 'List Your Car',
       path: '/add-car-listing',
-      icon: '🚗',
-      isVisible: (role) => role.isAuthenticated
+      icon: '📝',
+      isVisible: (authState) => authState.isAuthenticated
     },
     {
       id: 'how-it-works',
@@ -110,21 +106,21 @@ export class NavigationComponent implements OnInit, OnDestroy {
       label: 'Dashboard',
       path: '/dashboard',
       icon: '📊',
-      isVisible: (role) => role.isAuthenticated && (role.type === 'owner' || role.type === 'admin')
+      isVisible: (authState) => authState.isAuthenticated && (authState.profile?.user_type === 'owner' || authState.profile?.user_type === 'admin')
     },
     {
       id: 'admin-dashboard',
       label: 'Admin Dashboard',
       path: '/admin',
       icon: '⚙️',
-      isVisible: (role) => role.isAuthenticated && role.type === 'admin'
+      isVisible: (authState) => authState.isAuthenticated && authState.profile?.user_type === 'admin'
     },
     {
       id: 'renter-dashboard',
       label: 'My Bookings',
       path: '/renter-dashboard',
       icon: '📅',
-      isVisible: (role) => role.isAuthenticated && role.type === 'renter'
+      isVisible: (authState) => authState.isAuthenticated && authState.profile?.user_type === 'renter'
     },
     {
       id: 'messages',
@@ -132,21 +128,21 @@ export class NavigationComponent implements OnInit, OnDestroy {
       path: '/messaging',
       icon: '💬',
       badge: 3,
-      isVisible: (role) => role.isAuthenticated
+      isVisible: (authState) => authState.isAuthenticated
     },
     {
       id: 'profile',
       label: 'Profile',
       path: '/profile',
       icon: '👤',
-      isVisible: (role) => role.isAuthenticated
+      isVisible: (authState) => authState.isAuthenticated
     },
     {
       id: 'my-cars',
       label: 'My Cars',
       path: '/my-cars',
       icon: '🚙',
-      isVisible: (role) => role.isAuthenticated && role.type === 'owner'
+      isVisible: (authState) => authState.isAuthenticated && authState.profile?.user_type === 'owner'
     }
   ];
 
@@ -181,16 +177,20 @@ export class NavigationComponent implements OnInit, OnDestroy {
   // Breadcrumb Items
   breadcrumbItems: NavigationItem[] = [];
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private authService: AuthService
+  ) {}
 
   ngOnInit(): void {
-    this.initializeUserState();
+    this.initializeAuthState();
     this.setupScrollListener();
     this.updateBreadcrumbs();
   }
 
   ngOnDestroy(): void {
-    // Cleanup if needed
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   @HostListener('window:scroll')
@@ -198,45 +198,13 @@ export class NavigationComponent implements OnInit, OnDestroy {
     this.isScrolled = window.scrollY > 50;
   }
 
-  private initializeUserState(): void {
-    // Mock different user states for demonstration
-    const userStates = [
-      {
-        type: 'guest' as const,
-        isAuthenticated: false,
-        permissions: []
-      },
-      {
-        type: 'renter' as const,
-        isAuthenticated: true,
-        permissions: ['book_cars', 'view_bookings']
-      },
-      {
-        type: 'owner' as const,
-        isAuthenticated: true,
-        permissions: ['list_cars', 'manage_bookings', 'view_earnings']
-      },
-      {
-        type: 'admin' as const,
-        isAuthenticated: true,
-        permissions: ['admin_access', 'manage_users', 'view_reports']
-      }
-    ];
-
-    // Simulate different user states (you can change this to test different scenarios)
-    const currentStateIndex = 3; // Change this to test different user types (0: guest, 1: renter, 2: owner, 3: admin)
-    this.userRole = userStates[currentStateIndex];
-
-    if (this.userRole.isAuthenticated) {
-      this.currentUser = {
-        id: '1',
-        name: 'Adebayo Johnson',
-        email: 'adebayo@hiremycar.com',
-        avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-        role: this.userRole,
-        isOnline: true
-      };
-    }
+  private initializeAuthState(): void {
+    // Subscribe to auth state changes
+    this.authService.authState$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(authState => {
+        this.authState = authState;
+      });
   }
 
   private setupScrollListener(): void {
@@ -362,33 +330,34 @@ export class NavigationComponent implements OnInit, OnDestroy {
 
   // User Actions
   login(): void {
-    // Simulate login
-    this.userRole = {
-      type: 'renter',
-      isAuthenticated: true,
-      permissions: ['book_cars', 'view_bookings']
-    };
-    this.currentUser = {
-      id: '1',
-      name: 'Adebayo Johnson',
-      email: 'adebayo@hiremycar.com',
-      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-      role: this.userRole,
-      isOnline: true
-    };
-    this.showNotification('Welcome back, Adebayo!', 'success');
+    this.showLoginModal = true;
+  }
+
+  signup(): void {
+    this.showSignupModal = true;
   }
 
   logout(): void {
-    this.userRole = {
-      type: 'guest',
-      isAuthenticated: false,
-      permissions: []
-    };
-    this.currentUser = null;
+    this.authService.signOut();
     this.closeAllMenus();
-    this.router.navigate(['/']);
-    this.showNotification('You have been logged out successfully', 'info');
+  }
+
+  closeLoginModal(): void {
+    this.showLoginModal = false;
+  }
+
+  closeSignupModal(): void {
+    this.showSignupModal = false;
+  }
+
+  switchToSignup(): void {
+    this.showLoginModal = false;
+    this.showSignupModal = true;
+  }
+
+  switchToLogin(): void {
+    this.showSignupModal = false;
+    this.showLoginModal = true;
   }
 
   // Navigation Methods
@@ -423,7 +392,7 @@ export class NavigationComponent implements OnInit, OnDestroy {
 
   // Utility Methods
   getVisibleNavItems(items: NavigationItem[]): NavigationItem[] {
-    return items.filter(item => item.isVisible(this.userRole));
+    return items.filter(item => item.isVisible(this.authState));
   }
 
   isActiveRoute(path: string): boolean {
@@ -435,27 +404,11 @@ export class NavigationComponent implements OnInit, OnDestroy {
   }
 
   getUserDisplayName(): string {
-    if (!this.currentUser) {
-      return '';
-    }
-    return this.currentUser.name.split(' ')[0]; // Return first name only
+    return this.authService.getUserDisplayName();
   }
 
   getUserRoleLabel(): string {
-    switch (this.userRole.type) {
-      case 'renter': {
-        return 'Renter';
-      }
-      case 'owner': {
-        return 'Car Owner';
-      }
-      case 'admin': {
-        return 'Administrator';
-      }
-      default: {
-        return 'Guest';
-      }
-    }
+    return this.authService.getUserRoleLabel();
   }
 
   showNotification(message: string, type: 'success' | 'error' | 'info'): void {

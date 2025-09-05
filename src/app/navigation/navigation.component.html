@@ -4,7 +4,6 @@
         <!-- Logo Section -->
         <div class="logo-section">
             <a routerLink="/" class="logo">
-                <span class="logo-icon">🚗</span>
                 <span class="logo-text">HireMyCar</span>
                 <span class="logo-domain">.com.ng</span>
             </a>
@@ -42,19 +41,18 @@
         <!-- User Actions -->
         <div class="user-actions">
             <!-- Guest Actions -->
-            <div class="guest-actions" *ngIf="!userRole.isAuthenticated">
+            <div class="guest-actions" *ngIf="!authState.isAuthenticated">
                 <button class="action-btn secondary" (click)="login()">
                     <span class="action-icon">👤</span>
                     <span class="action-text">Login</span>
                 </button>
-                <button class="action-btn primary">
-                    <span class="action-icon">🚗</span>
+                <button class="action-btn primary" (click)="signup()">
                     <span class="action-text">Sign Up</span>
                 </button>
             </div>
 
             <!-- Authenticated User Actions -->
-            <div class="authenticated-actions" *ngIf="userRole.isAuthenticated">
+            <div class="authenticated-actions" *ngIf="authState.isAuthenticated">
                 <!-- Messages -->
                 <a routerLink="/messaging" class="action-btn messages"
                     [class.has-notifications]="notificationCount.messages > 0">
@@ -68,11 +66,12 @@
                 <div class="user-menu-container">
                     <button class="user-menu-trigger" (click)="toggleUserMenu()">
                         <div class="user-avatar">
-                            <img [src]="currentUser?.avatar" [alt]="currentUser?.name" *ngIf="currentUser?.avatar">
-                            <span class="avatar-fallback" *ngIf="!currentUser?.avatar">
+                            <img [src]="authState.profile?.avatar_url" [alt]="authState.profile?.full_name"
+                                *ngIf="authState.profile?.avatar_url">
+                            <span class="avatar-fallback" *ngIf="!authState.profile?.avatar_url">
                                 {{ getUserDisplayName().charAt(0) }}
                             </span>
-                            <span class="online-indicator" [class.online]="currentUser?.isOnline"></span>
+                            <span class="online-indicator" [class.online]="true"></span>
                         </div>
                         <span class="user-name">{{ getUserDisplayName() }}</span>
                         <span class="dropdown-arrow">▼</span>
@@ -83,14 +82,14 @@
                         <div class="dropdown-header">
                             <div class="user-info">
                                 <div class="user-avatar">
-                                    <img [src]="currentUser?.avatar" [alt]="currentUser?.name"
-                                        *ngIf="currentUser?.avatar">
-                                    <span class="avatar-fallback" *ngIf="!currentUser?.avatar">
+                                    <img [src]="authState.profile?.avatar_url" [alt]="authState.profile?.full_name"
+                                        *ngIf="authState.profile?.avatar_url">
+                                    <span class="avatar-fallback" *ngIf="!authState.profile?.avatar_url">
                                         {{ getUserDisplayName().charAt(0) }}
                                     </span>
                                 </div>
                                 <div class="user-details">
-                                    <span class="user-full-name">{{ currentUser?.name }}</span>
+                                    <span class="user-full-name">{{ authState.profile?.full_name }}</span>
                                     <span class="user-role">{{ getUserRoleLabel() }}</span>
                                 </div>
                             </div>
@@ -121,7 +120,6 @@
         <div class="mobile-nav-content" (click)="$event.stopPropagation()">
             <div class="mobile-nav-header">
                 <div class="mobile-logo">
-                    <span class="logo-icon">🚗</span>
                     <span class="logo-text">HireMyCar</span>
                 </div>
                 <button class="mobile-close" (click)="closeAllMenus()">
@@ -156,7 +154,7 @@
                 </div>
 
                 <!-- Authenticated User Menu -->
-                <div class="nav-section" *ngIf="userRole.isAuthenticated">
+                <div class="nav-section" *ngIf="authState.isAuthenticated">
                     <h3 class="nav-section-title">My Account</h3>
                     <ul class="mobile-nav-list">
                         <li class="mobile-nav-item"
@@ -172,28 +170,28 @@
                 </div>
 
                 <!-- Guest Actions -->
-                <div class="mobile-guest-actions" *ngIf="!userRole.isAuthenticated">
+                <div class="mobile-guest-actions" *ngIf="!authState.isAuthenticated">
                     <button class="mobile-action-btn secondary" (click)="login(); closeAllMenus()">
                         <span class="action-icon">👤</span>
                         <span class="action-text">Login</span>
                     </button>
-                    <button class="mobile-action-btn primary">
-                        <span class="action-icon">🚗</span>
+                    <button class="mobile-action-btn primary" (click)="signup(); closeAllMenus()">
                         <span class="action-text">Sign Up</span>
                     </button>
                 </div>
 
                 <!-- Authenticated User Actions -->
-                <div class="mobile-user-actions" *ngIf="userRole.isAuthenticated">
+                <div class="mobile-user-actions" *ngIf="authState.isAuthenticated">
                     <div class="mobile-user-info">
                         <div class="mobile-user-avatar">
-                            <img [src]="currentUser?.avatar" [alt]="currentUser?.name" *ngIf="currentUser?.avatar">
-                            <span class="avatar-fallback" *ngIf="!currentUser?.avatar">
+                            <img [src]="authState.profile?.avatar_url" [alt]="authState.profile?.full_name"
+                                *ngIf="authState.profile?.avatar_url">
+                            <span class="avatar-fallback" *ngIf="!authState.profile?.avatar_url">
                                 {{ getUserDisplayName().charAt(0) }}
                             </span>
                         </div>
                         <div class="mobile-user-details">
-                            <span class="mobile-user-name">{{ currentUser?.name }}</span>
+                            <span class="mobile-user-name">{{ authState.profile?.full_name }}</span>
                             <span class="mobile-user-role">{{ getUserRoleLabel() }}</span>
                         </div>
                     </div>
@@ -223,3 +221,11 @@
         </nav>
     </div>
 </div>
+
+<!-- Login Modal -->
+<app-login-modal *ngIf="showLoginModal" (close)="closeLoginModal()" (switchToSignup)="switchToSignup()">
+</app-login-modal>
+
+<!-- Signup Modal -->
+<app-signup-modal *ngIf="showSignupModal" (close)="closeSignupModal()" (switchToLogin)="switchToLogin()">
+</app-signup-modal>
