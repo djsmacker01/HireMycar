@@ -255,7 +255,7 @@ export class RenterDashboardComponent implements OnInit, OnDestroy {
       type: 'booking',
       message: 'New booking request: Lexus RX 2023',
       timestamp: new Date('2024-02-07 09:15'),
-      icon: '🚗'
+      icon: '📋'
     },
     {
       id: '5',

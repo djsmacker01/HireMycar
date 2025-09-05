@@ -14,7 +14,7 @@
                 <button class="search-btn">🔍</button>
             </div>
             <button class="btn btn-primary" (click)="findCar()" [disabled]="isDataLoading">
-                <span>🚗</span> Find a Car
+                Find a Car
             </button>
             <button class="btn btn-secondary" (click)="refreshData()" [disabled]="isDataLoading">
                 <span *ngIf="!isRefreshing">🔄</span>
@@ -301,7 +301,7 @@
                         </div>
                         <div class="favorite-actions">
                             <button class="btn btn-primary" (click)="bookAgain(car)">
-                                🚗 Book Again
+                                Book Again
                             </button>
                         </div>
                     </div>
@@ -335,7 +335,7 @@
 
             <div class="quick-actions">
                 <button class="quick-action-btn" (click)="findCar()" [disabled]="isDataLoading">
-                    <div class="action-icon">🚗</div>
+                    <div class="action-icon"></div>
                     <div class="action-label">Find a Car</div>
                 </button>
                 <button class="quick-action-btn" (click)="viewPaymentHistory()">
