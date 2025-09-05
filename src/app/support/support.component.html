@@ -1,0 +1,320 @@
+<!-- Support Page -->
+<div class="support-page">
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="hero-content">
+                <h1 class="hero-title">
+                    <span class="hero-icon">🛟</span>
+                    Help & Support Center
+                </h1>
+                <p class="hero-subtitle">
+                    Get the help you need to make the most of HireMyCar. Find answers, get in touch, and discover
+                    everything you need to know.
+                </p>
+
+                <!-- Enhanced Search Bar -->
+                <div class="search-container">
+                    <div class="search-input-wrapper">
+                        <input type="text" [(ngModel)]="searchQuery" (input)="onSearchInput($event)"
+                            (focus)="onSearchFocus()" (blur)="onSearchBlur()"
+                            placeholder="Search for help articles, FAQs, or topics..." class="search-input">
+                        <button class="search-btn" (click)="clearSearch()" *ngIf="searchQuery">
+                            <span class="search-icon">✕</span>
+                        </button>
+                        <button class="search-btn" *ngIf="!searchQuery">
+                            <span class="search-icon">🔍</span>
+                        </button>
+                    </div>
+
+                    <!-- Search Suggestions Dropdown -->
+                    <div class="search-suggestions" *ngIf="showSuggestions && searchSuggestions.length > 0">
+                        <div class="suggestions-header">
+                            <span class="suggestions-title">Suggestions</span>
+                            <span class="suggestions-count">{{ searchSuggestions.length }} found</span>
+                        </div>
+                        <div class="suggestions-list">
+                            <button class="suggestion-item" *ngFor="let suggestion of searchSuggestions"
+                                (click)="selectSuggestion(suggestion)">
+                                <span class="suggestion-icon">
+                                    {{ suggestion.type === 'faq' ? '❓' : suggestion.type === 'article' ? '📄' : '📁' }}
+                                </span>
+                                <span class="suggestion-text">{{ suggestion.text }}</span>
+                                <span class="suggestion-type">{{ suggestion.type }}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Recent Searches -->
+                    <div class="recent-searches" *ngIf="!searchQuery && recentSearches.length > 0">
+                        <div class="recent-header">
+                            <span class="recent-title">Recent Searches</span>
+                        </div>
+                        <div class="recent-list">
+                            <button class="recent-item" *ngFor="let search of recentSearches"
+                                (click)="selectRecentSearch(search)">
+                                <span class="recent-icon">🕒</span>
+                                <span class="recent-text">{{ search }}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Popular Topics -->
+                    <div class="popular-topics" *ngIf="!searchQuery">
+                        <div class="popular-header">
+                            <span class="popular-title">Popular Topics</span>
+                        </div>
+                        <div class="popular-list">
+                            <button class="popular-item" *ngFor="let topic of popularTopics"
+                                (click)="selectPopularTopic(topic)">
+                                <span class="popular-text">{{ topic }}</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Help Categories -->
+    <section class="help-categories">
+        <div class="container">
+            <h2 class="section-title">Browse Help Topics</h2>
+            <div class="categories-grid">
+                <div class="category-card" *ngFor="let category of helpCategories"
+                    [class.selected]="selectedCategory === category.id" (click)="selectCategory(category.id)">
+                    <div class="category-icon">{{ category.icon }}</div>
+                    <h3 class="category-title">{{ category.title }}</h3>
+                    <p class="category-description">{{ category.description }}</p>
+                    <div class="category-stats">
+                        <span class="article-count">{{ category.articles }} articles</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="faq-section" id="faq-section">
+        <div class="container">
+            <div class="faq-header">
+                <h2 class="section-title">Frequently Asked Questions</h2>
+                <div class="faq-filters">
+                    <button class="filter-btn" [class.active]="selectedCategory === 'all'"
+                        (click)="selectCategory('all')">
+                        All Questions
+                    </button>
+                    <button class="filter-btn" *ngFor="let category of helpCategories"
+                        [class.active]="selectedCategory === category.id" (click)="selectCategory(category.id)">
+                        {{ category.title }}
+                    </button>
+                </div>
+            </div>
+
+            <div class="faq-list">
+                <div class="faq-item" *ngFor="let faq of filteredFAQs" [class.expanded]="expandedFAQ === faq.id">
+                    <button class="faq-question" (click)="toggleFAQ(faq.id)">
+                        <div class="question-content">
+                            <span class="category-badge">{{ getCategoryIcon(faq.category) }} {{
+                                getCategoryTitle(faq.category) }}</span>
+                            <h3 class="question-text">{{ faq.question }}</h3>
+                        </div>
+                        <span class="expand-icon" [class.rotated]="expandedFAQ === faq.id">▼</span>
+                    </button>
+
+                    <div class="faq-answer" [class.show]="expandedFAQ === faq.id">
+                        <div class="answer-content">
+                            <p>{{ faq.answer }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="no-results" *ngIf="filteredFAQs.length === 0">
+                <div class="no-results-icon">🔍</div>
+                <h3>No results found</h3>
+                <p>Try adjusting your search terms or browse different categories.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Help Articles Section -->
+    <section class="help-articles" *ngIf="filteredArticles.length > 0">
+        <div class="container">
+            <h2 class="section-title">Help Articles</h2>
+            <div class="articles-grid">
+                <div class="article-card" *ngFor="let article of filteredArticles">
+                    <div class="article-header">
+                        <h3 class="article-title">{{ article.title }}</h3>
+                        <span class="article-category">{{ getCategoryTitle(article.category) }}</span>
+                    </div>
+                    <p class="article-content">{{ article.content }}</p>
+                    <div class="article-footer">
+                        <div class="article-tags">
+                            <span class="tag" *ngFor="let tag of article.tags">{{ tag }}</span>
+                        </div>
+                        <div class="article-feedback">
+                            <button class="feedback-btn helpful" (click)="markArticleHelpful(article.id)">
+                                <span class="feedback-icon">👍</span>
+                                <span class="feedback-count">{{ article.helpful }}</span>
+                            </button>
+                            <button class="feedback-btn not-helpful" (click)="markArticleNotHelpful(article.id)">
+                                <span class="feedback-icon">👎</span>
+                                <span class="feedback-count">{{ article.notHelpful }}</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="article-meta">
+                        <span class="last-updated">Updated: {{ article.lastUpdated }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section class="contact-section">
+        <div class="container">
+            <div class="contact-grid">
+                <!-- Contact Information -->
+                <div class="contact-info">
+                    <h2 class="section-title">Get in Touch</h2>
+                    <p class="contact-intro">
+                        Can't find what you're looking for? Our support team is here to help you 24/7.
+                    </p>
+
+                    <div class="contact-methods">
+                        <div class="contact-method" *ngFor="let contact of contactInfo">
+                            <div class="contact-icon">{{ contact.icon }}</div>
+                            <div class="contact-details">
+                                <h4 class="contact-type">{{ contact.type }}</h4>
+                                <a *ngIf="contact.link" [href]="contact.link" class="contact-value" target="_blank"
+                                    rel="noopener noreferrer">
+                                    {{ contact.value }}
+                                </a>
+                                <span *ngIf="!contact.link" class="contact-value">{{ contact.value }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Business Hours -->
+                    <div class="business-hours">
+                        <h3 class="hours-title">Business Hours</h3>
+                        <div class="hours-list">
+                            <div class="hours-item" *ngFor="let hours of businessHours">
+                                <span class="hours-day">{{ hours.day }}</span>
+                                <span class="hours-time">{{ hours.hours }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Form -->
+                <div class="contact-form-container">
+                    <h2 class="section-title">Send us a Message</h2>
+
+                    <!-- Success Message -->
+                    <div class="success-message" *ngIf="submitSuccess">
+                        <span class="success-icon">✅</span>
+                        <h3>Message Sent Successfully!</h3>
+                        <p>Thank you for contacting us. We'll get back to you within 2 hours.</p>
+                    </div>
+
+                    <form class="contact-form" (ngSubmit)="onSubmitContactForm()" *ngIf="!submitSuccess">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="name" class="form-label">Full Name *</label>
+                                <input type="text" id="name" name="name" [(ngModel)]="contactForm.name"
+                                    class="form-input" placeholder="Enter your full name" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email" class="form-label">Email Address *</label>
+                                <input type="email" id="email" name="email" [(ngModel)]="contactForm.email"
+                                    class="form-input" placeholder="Enter your email" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="subject" class="form-label">Subject *</label>
+                                <input type="text" id="subject" name="subject" [(ngModel)]="contactForm.subject"
+                                    class="form-input" placeholder="What's this about?" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="category" class="form-label">Category</label>
+                                <select id="category" name="category" [(ngModel)]="contactForm.category"
+                                    class="form-select">
+                                    <option value="">Select a category</option>
+                                    <option value="general">General Inquiry</option>
+                                    <option value="booking">Booking Issue</option>
+                                    <option value="payment">Payment Problem</option>
+                                    <option value="technical">Technical Support</option>
+                                    <option value="feedback">Feedback</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="priority" class="form-label">Priority</label>
+                            <select id="priority" name="priority" [(ngModel)]="contactForm.priority"
+                                class="form-select">
+                                <option value="low">Low - General question</option>
+                                <option value="medium" selected>Medium - Need help soon</option>
+                                <option value="high">High - Urgent issue</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="message" class="form-label">Message *</label>
+                            <textarea id="message" name="message" [(ngModel)]="contactForm.message"
+                                class="form-textarea" placeholder="Describe your question or issue in detail..."
+                                rows="6" required></textarea>
+                        </div>
+
+                        <button type="submit" class="submit-btn" [disabled]="!isFormValid() || isSubmitting"
+                            [class.loading]="isSubmitting">
+                            <span class="btn-content" *ngIf="!isSubmitting">
+                                <span class="btn-icon">📤</span>
+                                <span class="btn-text">Send Message</span>
+                            </span>
+                            <span class="btn-content loading" *ngIf="isSubmitting">
+                                <span class="spinner"></span>
+                                <span class="btn-text">Sending...</span>
+                            </span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Actions -->
+    <section class="quick-actions">
+        <div class="container">
+            <h2 class="section-title">Quick Actions</h2>
+            <div class="actions-grid">
+                <a href="/search" class="action-card">
+                    <div class="action-icon"></div>
+                    <h3>Find a Car</h3>
+                    <p>Browse available cars for rent</p>
+                </a>
+                <a href="/add-car-listing" class="action-card">
+                    <div class="action-icon">📝</div>
+                    <h3>List Your Car</h3>
+                    <p>Start earning with your vehicle</p>
+                </a>
+                <a href="/profile" class="action-card">
+                    <div class="action-icon">👤</div>
+                    <h3>My Account</h3>
+                    <p>Manage your profile and settings</p>
+                </a>
+                <a href="/messaging" class="action-card">
+                    <div class="action-icon">💬</div>
+                    <h3>Messages</h3>
+                    <p>View your conversations</p>
+                </a>
+            </div>
+        </div>
+    </section>
+</div>
