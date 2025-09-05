@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(/C:\\Users\\user\\OneDrive\\Desktop\\HireMycar\\src\\app\\messaging/**)",
+      "Read(/C:\\Users\\user\\OneDrive\\Desktop\\HireMycar\\src\\app\\messaging/**)",
+      "Read(/C:\\Users\\user\\OneDrive\\Desktop\\HireMycar\\src\\app\\messaging/**)",
+      "Read(/C:\\Users\\user\\OneDrive\\Desktop\\HireMycar\\src\\app\\messaging/**)",
+      "Read(/C:\\Users\\user\\OneDrive\\Desktop\\HireMycar\\src\\app\\messaging/**)",
+      "Read(/C:\\Users\\user\\OneDrive\\Desktop\\HireMycar\\src\\app\\messaging/**)",
+      "Bash(npm start)",
+      "Bash(ng serve:*)",
+      "Read(/C:\\Users\\user\\OneDrive\\Desktop\\HireMycar/**)",
+      "Read(/C:\\Users\\user\\OneDrive\\Desktop\\HireMycar\\src\\app/**)",
+      "Read(/C:\\Users\\user\\OneDrive\\Desktop\\HireMycar\\src\\app\\services/**)",
+      "Read(/C:\\Users\\user\\OneDrive\\Desktop\\HireMycar/**)",
+      "Read(/C:\\Users\\user\\OneDrive\\Desktop\\HireMycar\\src\\app\\car-search/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
