@@ -1,0 +1,182 @@
+<!-- Signup Modal -->
+<div class="modal-overlay" (click)="onBackdropClick($event)" (keydown)="onKeyDown($event)" tabindex="0">
+    <div class="modal-container" role="dialog" aria-labelledby="signup-title" aria-modal="true">
+        <!-- Modal Header -->
+        <div class="modal-header">
+            <h2 id="signup-title" class="modal-title">
+                Join HireMyCar
+            </h2>
+            <button class="close-btn" (click)="closeModal()" aria-label="Close modal">
+                <span class="close-icon">×</span>
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="modal-body">
+            <!-- Error Message -->
+            <div class="error-message" *ngIf="error" role="alert">
+                <span class="error-icon">⚠️</span>
+                <span class="error-text">{{ error.message }}</span>
+            </div>
+
+            <!-- Signup Form -->
+            <form (ngSubmit)="onSubmit()" class="signup-form" novalidate>
+                <!-- User Type Selection -->
+                <div class="form-group">
+                    <label class="form-label">I want to:</label>
+                    <div class="user-type-selection">
+                        <label class="user-type-option" [class.selected]="signupData.user_type === 'renter'">
+                            <input type="radio" name="user_type" value="renter" [(ngModel)]="signupData.user_type"
+                                class="user-type-radio" [disabled]="isLoading">
+                            <div class="user-type-content">
+                                <span class="user-type-label">Rent Cars</span>
+                                <span class="user-type-description">Find and book cars for your trips</span>
+                            </div>
+                        </label>
+
+                        <label class="user-type-option" [class.selected]="signupData.user_type === 'owner'">
+                            <input type="radio" name="user_type" value="owner" [(ngModel)]="signupData.user_type"
+                                class="user-type-radio" [disabled]="isLoading">
+                            <div class="user-type-content">
+                                <span class="user-type-icon">🏠</span>
+                                <span class="user-type-label">List My Car</span>
+                                <span class="user-type-description">Earn money by renting out your car</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Full Name Field -->
+                <div class="form-group">
+                    <label for="full_name" class="form-label">Full Name</label>
+                    <div class="input-container">
+                        <input type="text" id="full_name" name="full_name" [(ngModel)]="signupData.full_name"
+                            class="form-input" placeholder="Enter your full name" required autocomplete="name"
+                            [disabled]="isLoading">
+                        <span class="input-icon">👤</span>
+                    </div>
+                </div>
+
+                <!-- Email Field -->
+                <div class="form-group">
+                    <label for="email" class="form-label">Email Address</label>
+                    <div class="input-container">
+                        <input type="email" id="email" name="email" [(ngModel)]="signupData.email" class="form-input"
+                            placeholder="Enter your email" required autocomplete="email" [disabled]="isLoading">
+                        <span class="input-icon">📧</span>
+                    </div>
+                </div>
+
+                <!-- Phone Number Field -->
+                <div class="form-group">
+                    <label for="phone_number" class="form-label">Phone Number (Optional)</label>
+                    <div class="input-container">
+                        <input type="tel" id="phone_number" name="phone_number" [(ngModel)]="signupData.phone_number"
+                            class="form-input" placeholder="+234 800 000 0000" autocomplete="tel"
+                            [disabled]="isLoading">
+                        <span class="input-icon">📱</span>
+                    </div>
+                </div>
+
+                <!-- Password Field -->
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <div class="input-container">
+                        <input [type]="showPassword ? 'text' : 'password'" id="password" name="password"
+                            [(ngModel)]="signupData.password" class="form-input" placeholder="Create a strong password"
+                            required autocomplete="new-password" [disabled]="isLoading">
+                        <button type="button" class="password-toggle" (click)="togglePasswordVisibility()"
+                            [disabled]="isLoading" aria-label="Toggle password visibility">
+                            <span class="toggle-icon">{{ showPassword ? '🙈' : '👁️' }}</span>
+                        </button>
+                    </div>
+                    <!-- Password Strength Indicator -->
+                    <div class="password-strength" *ngIf="signupData.password">
+                        <div class="strength-bar">
+                            <div class="strength-fill" [style.width.%]="getPasswordStrength().percentage"
+                                [style.background-color]="getPasswordStrength().color"></div>
+                        </div>
+                        <span class="strength-text" [style.color]="getPasswordStrength().color">
+                            {{ getPasswordStrength().strength }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Confirm Password Field -->
+                <div class="form-group">
+                    <label for="confirm_password" class="form-label">Confirm Password</label>
+                    <div class="input-container">
+                        <input [type]="showConfirmPassword ? 'text' : 'password'" id="confirm_password"
+                            name="confirm_password" [(ngModel)]="confirmPassword" class="form-input"
+                            [class.error]="confirmPassword && signupData.password !== confirmPassword"
+                            placeholder="Confirm your password" required autocomplete="new-password"
+                            [disabled]="isLoading">
+                        <button type="button" class="password-toggle" (click)="toggleConfirmPasswordVisibility()"
+                            [disabled]="isLoading" aria-label="Toggle password visibility">
+                            <span class="toggle-icon">{{ showConfirmPassword ? '🙈' : '👁️' }}</span>
+                        </button>
+                    </div>
+                    <!-- Password Match Indicator -->
+                    <div class="password-match" *ngIf="confirmPassword">
+                        <span class="match-icon" [class.match]="signupData.password === confirmPassword">
+                            {{ signupData.password === confirmPassword ? '✅' : '❌' }}
+                        </span>
+                        <span class="match-text" [class.match]="signupData.password === confirmPassword">
+                            {{ signupData.password === confirmPassword ? 'Passwords match' : 'Passwords do not match' }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Terms and Conditions -->
+                <div class="form-group">
+                    <label class="terms-checkbox">
+                        <input type="checkbox" [(ngModel)]="acceptedTerms" name="terms" [disabled]="isLoading" required>
+                        <span class="checkbox-custom"></span>
+                        <span class="terms-text">
+                            I agree to the
+                            <a href="#" class="terms-link">Terms of Service</a>
+                            and
+                            <a href="#" class="terms-link">Privacy Policy</a>
+                        </span>
+                    </label>
+                </div>
+
+                <!-- Submit Button -->
+                <button type="submit" class="submit-btn primary" [disabled]="!isFormValid() || isLoading"
+                    [class.loading]="isLoading">
+                    <span class="btn-content" *ngIf="!isLoading">
+                        <span class="btn-icon">🚀</span>
+                        <span class="btn-text">Create Account</span>
+                    </span>
+                    <span class="btn-content loading" *ngIf="isLoading">
+                        <span class="spinner"></span>
+                        <span class="btn-text">Creating Account...</span>
+                    </span>
+                </button>
+            </form>
+
+            <!-- Divider -->
+            <div class="divider">
+                <span class="divider-text">or</span>
+            </div>
+
+            <!-- Social Signup -->
+            <div class="social-signup">
+                <button type="button" class="social-btn google" (click)="onGoogleSignUp()" [disabled]="isLoading">
+                    <span class="social-icon">🔍</span>
+                    <span class="social-text">Continue with Google</span>
+                </button>
+            </div>
+
+            <!-- Login Link -->
+            <div class="login-link">
+                <p class="login-text">
+                    Already have an account?
+                    <button type="button" class="login-btn" (click)="onSwitchToLogin()">
+                        Sign in here
+                    </button>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
