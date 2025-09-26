@@ -1,3 +1,5 @@
+@use "sass:color";
+
 // Nigerian Color Scheme
 $primary-red: #dc2626;
 $light-red: #fef2f2;
@@ -520,7 +522,7 @@ $error-red: #ef4444;
     color: white;
     
     &:hover:not(:disabled) {
-      background: darken($primary-red, 10%);
+      background: color.adjust($primary-red, $lightness: -10%);
       transform: translateY(-1px);
     }
   }
