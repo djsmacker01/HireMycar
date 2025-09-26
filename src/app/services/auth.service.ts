@@ -1,14 +1,13 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
-import { BehaviorSubject, Observable, from, throwError } from 'rxjs';
-import { map, catchError, switchMap, tap } from 'rxjs/operators';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { SupabaseService } from './supabase.service';
-import { 
-  UserProfile, 
-  AuthState, 
-  SignupData, 
-  LoginData, 
-  AuthError 
+import {
+  UserProfile,
+  AuthState,
+  SignupData,
+  LoginData,
+  AuthError
 } from '../interfaces/auth.interface';
 import { User } from '@supabase/supabase-js';
 
@@ -36,6 +35,17 @@ export class AuthService {
   public currentProfile = computed(() => this.authState().profile);
   public isLoading = computed(() => this.authState().isLoading);
 
+  // Debug method to check authentication status
+  public debugAuthStatus(): void {
+    console.log('=== AUTH DEBUG ===');
+    console.log('Auth State:', this.authState());
+    console.log('Is Authenticated:', this.isAuthenticated);
+    console.log('Current User:', this.currentUser);
+    console.log('Current Profile:', this.currentProfile);
+    console.log('Is Loading:', this.isLoading);
+    console.log('==================');
+  }
+
   constructor(
     private supabase: SupabaseService,
     private router: Router
@@ -47,7 +57,7 @@ export class AuthService {
     try {
       // Get initial session
       const { data: { session }, error } = await this.supabase.client.auth.getSession();
-      
+
       if (error) {
         console.error('Error getting session:', error);
         this.updateAuthState({ user: null, profile: null, isLoading: false, isAuthenticated: false });
@@ -63,7 +73,7 @@ export class AuthService {
       // Listen for auth changes
       this.supabase.client.auth.onAuthStateChange(async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.email);
-        
+
         if (session?.user) {
           await this.loadUserProfile(session.user);
         } else {
@@ -184,6 +194,12 @@ export class AuthService {
         if (profileError) {
           console.error('Error creating profile:', profileError);
         }
+
+        // If email confirmation is required, don't update auth state yet
+        if (data.user && !data.user.email_confirmed_at) {
+          this.updateAuthState({ ...this.authState(), isLoading: false });
+          return { success: true };
+        }
       }
 
       this.updateAuthState({ ...this.authState(), isLoading: false });
@@ -242,9 +258,9 @@ export class AuthService {
   async signOut(): Promise<void> {
     try {
       this.updateAuthState({ ...this.authState(), isLoading: true });
-      
+
       const { error } = await this.supabase.client.auth.signOut();
-      
+
       if (error) {
         console.error('Error signing out:', error);
       }
@@ -354,6 +370,7 @@ export class AuthService {
     } catch (error: any) {
       return { success: false, error: { message: error.message || 'Password update failed' } };
     }
+  }
 
   async updateProfile(updates: Partial<UserProfile>): Promise<{ success: boolean; error?: AuthError }> {
     try {
@@ -382,6 +399,27 @@ export class AuthService {
       return { success: true };
     } catch (error: any) {
       return { success: false, error: { message: error.message || 'An unexpected error occurred' } };
+    }
+  }
+
+  async createProfileIfNotExists(): Promise<{ success: boolean; error?: AuthError }> {
+    try {
+      const user = this.currentUser();
+      if (!user) {
+        return { success: false, error: { message: 'No user found' } };
+      }
+
+      // Check if profile already exists
+      const existingProfile = this.currentProfile();
+      if (existingProfile) {
+        return { success: true }; // Profile already exists
+      }
+
+      // Create new profile
+      await this.createUserProfile(user);
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: { message: error.message || 'Failed to create profile' } };
     }
   }
 
@@ -436,5 +474,15 @@ export class AuthService {
       default:
         return 'Guest';
     }
+  }
+
+  needsEmailVerification(): boolean {
+    const user = this.currentUser();
+    return !!(user && !user.email_confirmed_at);
+  }
+
+  needsProfileSetup(): boolean {
+    const profile = this.currentProfile();
+    return !!(profile && (!profile.phone_number || !profile.full_name));
   }
 }
