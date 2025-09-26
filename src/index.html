@@ -4,8 +4,11 @@
 <head>
   <meta charset="utf-8">
   <title>HireMyCar - Nigeria's Peer-to-Peer Car Rental Platform</title>
-  <!-- Primary favicon -->
-  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=3">
+  <!-- Primary favicon with aggressive cache busting -->
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=4&t=2024">
+  <!-- Data URI favicon as immediate fallback -->
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSIxNiIgZmlsbD0iIzFlNDBhZiIvPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDYsIDgpIj4KICAgIDxyZWN0IHg9IjIiIHk9IjYiIHdpZHRoPSIxMiIgaGVpZ2h0PSI0IiBmaWxsPSIjZmZmZmZmIiByeD0iMSIvPgogICAgPHBhdGggZD0iTTQgNiBMOCAyIEwxMiA2IFoiIGZpbGw9IiNmZmZmZmYiLz4KICAgIDxjaXJjbGUgY3g9IjQiIGN5PSIxMiIgcj0iMiIgZmlsbD0iI2Y1OWUwYiIvPgogICAgPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMiIgZmlsbD0iI2Y1OWUwYiIvPgogICAgPGNpcmNsZSBjeD0iNCIgY3k9IjEyIiByPSIxIiBmaWxsPSIjZmZmZmZmIi8+CiAgICA8Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxIiBmaWxsPSIjZmZmZmZmIi8+CiAgPC9nPgogIDx0ZXh0IHg9IjE2IiB5PSIyMiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjgiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjZjU5ZTBpIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5IPC90ZXh0Pgo8L3N2Zz4K">
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description"
@@ -14,22 +17,41 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <!-- Favicon for modern browsers -->
-  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=3">
-  <link rel="icon" type="image/svg+xml" sizes="32x32" href="favicon-32x32.svg?v=3">
-  <link rel="icon" type="image/x-icon" href="favicon.ico?v=3">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg?v=4&t=2024">
+  <link rel="icon" type="image/svg+xml" sizes="32x32" href="favicon-32x32.svg?v=4&t=2024">
+  <link rel="icon" type="image/x-icon" href="favicon.ico?v=4&t=2024">
 
   <!-- Apple Touch Icon -->
-  <link rel="apple-touch-icon" sizes="180x180" href="favicon.svg?v=3">
+  <link rel="apple-touch-icon" sizes="180x180" href="favicon.svg?v=4&t=2024">
 
   <!-- Android Chrome -->
-  <link rel="icon" type="image/svg+xml" sizes="192x192" href="favicon.svg?v=3">
-  <link rel="icon" type="image/svg+xml" sizes="512x512" href="favicon.svg?v=3">
+  <link rel="icon" type="image/svg+xml" sizes="192x192" href="favicon.svg?v=4&t=2024">
+  <link rel="icon" type="image/svg+xml" sizes="512x512" href="favicon.svg?v=4&t=2024">
 
   <!-- Web App Manifest -->
   <link rel="manifest" href="manifest.json">
 
   <!-- Material Icons -->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <!-- Force favicon update with JavaScript -->
+  <script>
+    (function () {
+      const favicon = document.createElement('link');
+      favicon.rel = 'icon';
+      favicon.type = 'image/svg+xml';
+      favicon.href = 'favicon.svg?v=' + Date.now();
+      document.head.appendChild(favicon);
+
+      // Also update existing favicon links
+      const existingFavicons = document.querySelectorAll('link[rel="icon"]');
+      existingFavicons.forEach(link => {
+        if (link.href.includes('favicon.svg')) {
+          link.href = 'favicon.svg?v=' + Date.now();
+        }
+      });
+    })();
+  </script>
 </head>
 
 <body>

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HireMyCar Favicon Force Test</title>
+
+    <!-- Multiple favicon approaches -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg?v=force&t=2024">
+    <link rel="icon" type="image/svg+xml" sizes="32x32" href="favicon-32x32.svg?v=force&t=2024">
+    <link rel="icon" type="image/x-icon" href="favicon.ico?v=force&t=2024">
+
+    <!-- Data URI favicon -->
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSIxNiIgZmlsbD0iIzFlNDBhZiIvPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDYsIDgpIj4KICAgIDxyZWN0IHg9IjIiIHk9IjYiIHdpZHRoPSIxMiIgaGVpZ2h0PSI0IiBmaWxsPSIjZmZmZmZmIiByeD0iMSIvPgogICAgPHBhdGggZD0iTTQgNiBMOCAyIEwxMiA2IFoiIGZpbGw9IiNmZmZmZmYiLz4KICAgIDxjaXJjbGUgY3g9IjQiIGN5PSIxMiIgcj0iMiIgZmlsbD0iI2Y1OWUwYiIvPgogICAgPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMiIgZmlsbD0iI2Y1OWUwYiIvPgogICAgPGNpcmNsZSBjeD0iNCIgY3k9IjEyIiByPSIxIiBmaWxsPSIjZmZmZmZmIi8+CiAgICA8Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxIiBmaWxsPSIjZmZmZmZmIi8+CiAgPC9nPgogIDx0ZXh0IHg9IjE2IiB5PSIyMiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjgiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjZjU5ZTBpIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5IPC90ZXh0Pgo8L3N2Zz4K">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .favicon-preview {
+            width: 32px;
+            height: 32px;
+            border: 2px solid #f59e0b;
+            border-radius: 50%;
+            margin: 10px 0;
+        }
+
+        .instructions {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .step {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🚗 HireMyCar Favicon Force Test</h1>
+
+    <div class="test-section">
+        <h2>Current Favicon Status</h2>
+        <p>Check your browser tab - you should see the HireMyCar car icon instead of the Angular logo.</p>
+        <div class="favicon-preview"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>If You Still See Angular Logo:</h2>
+        <div class="instructions">
+            <div class="step">
+                <strong>Step 1:</strong> Hard refresh the page (Ctrl+F5 or Cmd+Shift+R)
+            </div>
+            <div class="step">
+                <strong>Step 2:</strong> Clear browser cache completely
+            </div>
+            <div class="step">
+                <strong>Step 3:</strong> Open in incognito/private mode
+            </div>
+            <div class="step">
+                <strong>Step 4:</strong> Close and reopen the browser
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>Expected Favicon:</h2>
+        <ul>
+            <li>✅ Blue circular background (#1e40af)</li>
+            <li>✅ White car silhouette with roof</li>
+            <li>✅ Gold wheels (#f59e0b) with white centers</li>
+            <li>✅ Gold "H" letter for HireMyCar</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>Technical Details:</h2>
+        <p>This page uses multiple favicon approaches:</p>
+        <ul>
+            <li>Cache-busted SVG favicon</li>
+            <li>Data URI embedded favicon</li>
+            <li>Multiple size variants</li>
+            <li>JavaScript force update</li>
+        </ul>
+    </div>
+
+    <script>
+        // Force favicon update with JavaScript
+        function forceFaviconUpdate() {
+            const timestamp = Date.now();
+            const favicon = document.createElement('link');
+            favicon.rel = 'icon';
+            favicon.type = 'image/svg+xml';
+            favicon.href = 'favicon.svg?v=' + timestamp;
+            document.head.appendChild(favicon);
+
+            console.log('Favicon force updated with timestamp:', timestamp);
+        }
+
+        // Update favicon every 5 seconds for testing
+        setInterval(forceFaviconUpdate, 5000);
+
+        // Initial update
+        forceFaviconUpdate();
+    </script>
+</body>
+
+</html>
