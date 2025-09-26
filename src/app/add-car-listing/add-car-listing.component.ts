@@ -557,7 +557,8 @@ export class AddCarListingComponent implements OnInit, OnDestroy {
     // Reset all component state to start fresh
     this.currentStep = 1;
     this.selectedFeatures = [];
-    this.selectedImages = [];
+    this.uploadedImages = [];
+    this.imagePreviewUrls = [];
     this.isSubmitting = false;
     this.formCompletionPercentage = 0;
 
