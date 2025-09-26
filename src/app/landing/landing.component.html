@@ -63,6 +63,107 @@
         </div>
     </section>
 
+    <!-- User Navigation Section (for authenticated users) -->
+    <section class="user-navigation-section" *ngIf="authState.isAuthenticated">
+        <div class="container">
+            <div class="user-welcome">
+                <h2 class="welcome-title">Welcome back, {{ getUserDisplayName() }}!</h2>
+                <p class="welcome-subtitle">Access your {{ getUserRoleLabel().toLowerCase() }} dashboard and manage your
+                    account</p>
+            </div>
+
+            <div class="user-nav-grid">
+                <!-- Dashboard Links -->
+                <div class="nav-card"
+                    *ngIf="authState.profile?.user_type === 'owner' || authState.profile?.user_type === 'admin'">
+                    <a routerLink="/dashboard" class="nav-link">
+                        <div class="nav-icon-box">
+                            <span class="material-icons nav-icon">dashboard</span>
+                        </div>
+                        <div class="nav-content">
+                            <h3 class="nav-title">Dashboard</h3>
+                            <p class="nav-description">Manage your car listings and bookings</p>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="nav-card" *ngIf="authState.profile?.user_type === 'renter'">
+                    <a routerLink="/renter-dashboard" class="nav-link">
+                        <div class="nav-icon-box">
+                            <span class="material-icons nav-icon">book_online</span>
+                        </div>
+                        <div class="nav-content">
+                            <h3 class="nav-title">My Bookings</h3>
+                            <p class="nav-description">View and manage your car rentals</p>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="nav-card" *ngIf="authState.profile?.user_type === 'admin'">
+                    <a routerLink="/admin" class="nav-link">
+                        <div class="nav-icon-box">
+                            <span class="material-icons nav-icon">admin_panel_settings</span>
+                        </div>
+                        <div class="nav-content">
+                            <h3 class="nav-title">Admin Dashboard</h3>
+                            <p class="nav-description">System administration and management</p>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Common Links -->
+                <div class="nav-card">
+                    <a routerLink="/profile" class="nav-link">
+                        <div class="nav-icon-box">
+                            <span class="material-icons nav-icon">person</span>
+                        </div>
+                        <div class="nav-content">
+                            <h3 class="nav-title">Profile</h3>
+                            <p class="nav-description">Manage your account settings</p>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="nav-card"
+                    *ngIf="authState.profile?.user_type === 'owner' || authState.profile?.user_type === 'admin'">
+                    <a routerLink="/add-car-listing" class="nav-link">
+                        <div class="nav-icon-box">
+                            <span class="material-icons nav-icon">add_circle</span>
+                        </div>
+                        <div class="nav-content">
+                            <h3 class="nav-title">Add Car</h3>
+                            <p class="nav-description">List your car for rental</p>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="nav-card">
+                    <a routerLink="/messaging" class="nav-link">
+                        <div class="nav-icon-box">
+                            <span class="material-icons nav-icon">message</span>
+                        </div>
+                        <div class="nav-content">
+                            <h3 class="nav-title">Messages</h3>
+                            <p class="nav-description">Communicate with users</p>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="nav-card">
+                    <a routerLink="/search" class="nav-link">
+                        <div class="nav-icon-box">
+                            <span class="material-icons nav-icon">search</span>
+                        </div>
+                        <div class="nav-content">
+                            <h3 class="nav-title">Find Cars</h3>
+                            <p class="nav-description">Browse available cars</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Features Section -->
     <section class="features-section">
         <div class="container">

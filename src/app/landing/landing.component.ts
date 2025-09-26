@@ -1,6 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
+import { AuthService } from '../services/auth.service';
+import { UserProfile, AuthState } from '../interfaces/auth.interface';
 
 // Interfaces
 export interface Feature {
@@ -28,7 +31,58 @@ export interface TrustIndicator {
   templateUrl: './landing.component.html',
   styleUrls: ['./landing.component.scss']
 })
-export class LandingComponent {
+export class LandingComponent implements OnInit, OnDestroy {
+  // Authentication state
+  authState: AuthState = {
+    user: null,
+    profile: null,
+    isLoading: true,
+    isAuthenticated: false
+  };
+
+  private destroy$ = new Subject<void>();
+
+  constructor(private authService: AuthService) { }
+
+  ngOnInit(): void {
+    this.initializeAuthState();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private initializeAuthState(): void {
+    this.authService.authState$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(authState => {
+      this.authState = authState;
+      console.log('Landing: Auth state updated:', authState);
+    });
+  }
+
+  getUserDisplayName(): string {
+    if (this.authState.profile?.full_name) {
+      return this.authState.profile.full_name;
+    }
+    if (this.authState.user?.email) {
+      return this.authState.user.email.split('@')[0];
+    }
+    return 'User';
+  }
+
+  getUserRoleLabel(): string {
+    if (!this.authState.profile?.user_type) return 'User';
+
+    switch (this.authState.profile.user_type) {
+      case 'owner': return 'Car Owner';
+      case 'renter': return 'Renter';
+      case 'admin': return 'Administrator';
+      default: return 'User';
+    }
+  }
+
   features: Feature[] = [
     {
       icon: 'verified_user',
