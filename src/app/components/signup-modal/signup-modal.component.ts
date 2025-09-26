@@ -36,7 +36,7 @@ export class SignupModalComponent implements OnInit, OnDestroy {
   constructor(
     private authService: AuthService,
     private router: Router
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     // Listen for auth state changes to close modal on successful signup
@@ -64,10 +64,17 @@ export class SignupModalComponent implements OnInit, OnDestroy {
 
     try {
       const result = await this.authService.signUp(this.signupData);
-      
+
       if (result.success) {
-        // Show success message and redirect
-        this.router.navigate(['/']);
+        // Check if email verification is required
+        const user = this.authService.currentUser();
+        if (user && !user.email_confirmed_at) {
+          // Redirect to email verification
+          this.router.navigate(['/verify-email']);
+        } else {
+          // Redirect to profile setup for new users
+          this.router.navigate(['/profile-setup']);
+        }
         this.closeModal();
       } else {
         this.error = result.error || { message: 'Signup failed' };
@@ -85,7 +92,7 @@ export class SignupModalComponent implements OnInit, OnDestroy {
 
     try {
       const result = await this.authService.signInWithGoogle();
-      
+
       if (!result.success) {
         this.error = result.error || { message: 'Google sign-up failed' };
       }
