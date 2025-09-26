@@ -1,0 +1,21 @@
+{
+    "name": "HireMyCar - Nigeria's Car Rental Platform",
+    "short_name": "HireMyCar",
+    "description": "Nigeria's trusted peer-to-peer car rental platform",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#1e40af",
+    "theme_color": "#1e40af",
+    "icons": [
+        {
+            "src": "favicon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml"
+        },
+        {
+            "src": "favicon-32x32.svg",
+            "sizes": "32x32",
+            "type": "image/svg+xml"
+        }
+    ]
+}

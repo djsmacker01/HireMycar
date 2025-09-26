@@ -1,15 +1,41 @@
-# example netlify.toml
+# Netlify configuration for HireMyCar Angular application
 [build]
   command = "npm run build"
   functions = "netlify/functions"
-  publish = "HireMycar"
+  publish = "dist/HireMycar/browser"
 
-  ## Uncomment to use this redirect for Single Page Applications like create-react-app.
-  ## Not needed for static site generators.
-  #[[redirects]]
-  #  from = "/*"
-  #  to = "/index.html"
-  #  status = 200
+  ## Redirect for Single Page Applications like Angular.
+  ## This is needed for Angular routing to work properly.
+  [[redirects]]
+    from = "/*"
+    to = "/index.html"
+    status = 200
+
+  ## Headers for better performance and security
+  [[headers]]
+    for = "/*"
+    [headers.values]
+      X-Frame-Options = "DENY"
+      X-XSS-Protection = "1; mode=block"
+      X-Content-Type-Options = "nosniff"
+      Referrer-Policy = "strict-origin-when-cross-origin"
+
+  ## Cache static assets
+  [[headers]]
+    for = "/assets/*"
+    [headers.values]
+      Cache-Control = "public, max-age=31536000, immutable"
+
+  ## Cache favicon and manifest
+  [[headers]]
+    for = "/*.svg"
+    [headers.values]
+      Cache-Control = "public, max-age=86400"
+
+  [[headers]]
+    for = "/*.ico"
+    [headers.values]
+      Cache-Control = "public, max-age=86400"
 
   ## (optional) Settings for Netlify Dev
   ## https://github.com/netlify/cli/blob/main/docs/netlify-dev.md#project-detection
