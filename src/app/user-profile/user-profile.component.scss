@@ -1,3 +1,5 @@
+@use "sass:color";
+
 // Modern Nigerian Color Scheme
 $primary-red: #dc2626;
 $light-red: #fef2f2;
@@ -761,6 +763,99 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
           transform: none;
         }
       }
+    }
+  }
+}
+
+// Document Upload Styles
+.document-upload-section {
+  margin-top: 1rem;
+  
+  .file-select-btn {
+    @include button-modern;
+    background: $primary-blue;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    display: inline-block;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+    text-align: center;
+    min-width: 120px;
+
+    &:hover {
+      background: color.adjust($primary-blue, $lightness: -10%);
+      transform: translateY(-2px);
+      box-shadow: $shadow-md;
+    }
+  }
+
+  .file-preview {
+    margin: 1rem 0;
+    padding: 1rem;
+    background: $gray-50;
+    border: 2px dashed $gray-300;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+
+    &:hover {
+      border-color: color.adjust($primary-blue, $lightness: 20%);
+      background: rgba($primary-blue, 0.05);
+    }
+
+    .file-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 0.5rem;
+
+      .file-name {
+        font-weight: 500;
+        color: $gray-700;
+        font-size: 0.9rem;
+      }
+
+      .file-size {
+        color: $gray-500;
+        font-size: 0.8rem;
+      }
+    }
+
+    .preview-image {
+      max-width: 100%;
+      max-height: 200px;
+      border-radius: 0.25rem;
+      box-shadow: $shadow-sm;
+    }
+  }
+
+  .upload-doc-btn {
+    @include button-modern;
+    background: $primary-green;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    font-weight: 500;
+    width: 100%;
+    margin-top: 0.5rem;
+
+    &:hover:not(:disabled) {
+      background: color.adjust($primary-green, $lightness: -10%);
+      transform: translateY(-2px);
+      box-shadow: $shadow-md;
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
     }
   }
 }
@@ -1542,4 +1637,36 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
   .profile-content {
     overflow-x: hidden;
   }
+}
+
+// Loading Styles
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 2rem;
+  text-align: center;
+
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f4f6;
+    border-top: 4px solid $primary-blue;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    color: #6b7280;
+    font-size: 1rem;
+    margin: 0;
+  }
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 } 

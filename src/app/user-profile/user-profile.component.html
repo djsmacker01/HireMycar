@@ -1,4 +1,4 @@
-<div class="user-profile-container">
+<div class="user-profile-container" *ngIf="userProfile; else loadingTemplate">
     <!-- Notification Toast -->
     <div class="notification-toast" *ngIf="showNotification" [class]="'notification-' + notificationType">
         <span class="notification-message">{{ notificationMessage }}</span>
@@ -148,44 +148,114 @@
         </div>
 
         <div class="verification-grid">
+            <!-- Driver's License -->
             <div class="verification-item" [class.verified]="verificationStatus.driverLicenseUploaded">
                 <div class="verification-icon">
                     {{ verificationStatus.driverLicenseUploaded ? '✅' : '📄' }}
                 </div>
                 <div class="verification-content">
                     <h4>Driver's License</h4>
-                    <p>{{ verificationStatus.driverLicenseUploaded ? 'Uploaded' : 'Not uploaded' }}</p>
-                    <button class="upload-doc-btn" *ngIf="!verificationStatus.driverLicenseUploaded"
-                        (click)="uploadDocument('driverLicense')" [disabled]="isLoading">
-                        {{ isLoading ? 'Uploading...' : 'Upload' }}
-                    </button>
+                    <p>{{ verificationStatus.driverLicenseUploaded ? 'Uploaded - Awaiting verification' : 'Not uploaded'
+                        }}</p>
+
+                    <!-- File Selection -->
+                    <div class="document-upload-section" *ngIf="!verificationStatus.driverLicenseUploaded">
+                        <input type="file" id="driverLicenseInput" accept="image/*,.pdf"
+                            (change)="onDocumentSelected($event, 'driverLicense')" style="display: none;">
+                        <label for="driverLicenseInput" class="file-select-btn">
+                            {{ selectedDriverLicense ? 'Change File' : 'Select File' }}
+                        </label>
+
+                        <!-- File Preview -->
+                        <div class="file-preview" *ngIf="selectedDriverLicense">
+                            <div class="file-info">
+                                <span class="file-name">{{ selectedDriverLicense.name }}</span>
+                                <span class="file-size">{{ (selectedDriverLicense.size / 1024 / 1024).toFixed(2) }}
+                                    MB</span>
+                            </div>
+                            <img *ngIf="driverLicensePreview" [src]="driverLicensePreview" alt="Preview"
+                                class="preview-image">
+                        </div>
+
+                        <!-- Upload Button -->
+                        <button class="upload-doc-btn" *ngIf="selectedDriverLicense"
+                            (click)="uploadDocument('driverLicense')" [disabled]="isUploadingDocument">
+                            {{ isUploadingDocument ? 'Uploading...' : 'Upload Document' }}
+                        </button>
+                    </div>
                 </div>
             </div>
 
+            <!-- ID Photo -->
             <div class="verification-item" [class.verified]="verificationStatus.idPhotoUploaded">
                 <div class="verification-icon">
                     {{ verificationStatus.idPhotoUploaded ? '✅' : '🆔' }}
                 </div>
                 <div class="verification-content">
                     <h4>ID Photo</h4>
-                    <p>{{ verificationStatus.idPhotoUploaded ? 'Uploaded' : 'Not uploaded' }}</p>
-                    <button class="upload-doc-btn" *ngIf="!verificationStatus.idPhotoUploaded"
-                        (click)="uploadDocument('idPhoto')" [disabled]="isLoading">
-                        {{ isLoading ? 'Uploading...' : 'Upload' }}
-                    </button>
+                    <p>{{ verificationStatus.idPhotoUploaded ? 'Uploaded - Awaiting verification' : 'Not uploaded' }}
+                    </p>
+
+                    <!-- File Selection -->
+                    <div class="document-upload-section" *ngIf="!verificationStatus.idPhotoUploaded">
+                        <input type="file" id="idPhotoInput" accept="image/*,.pdf"
+                            (change)="onDocumentSelected($event, 'idPhoto')" style="display: none;">
+                        <label for="idPhotoInput" class="file-select-btn">
+                            {{ selectedIdPhoto ? 'Change File' : 'Select File' }}
+                        </label>
+
+                        <!-- File Preview -->
+                        <div class="file-preview" *ngIf="selectedIdPhoto">
+                            <div class="file-info">
+                                <span class="file-name">{{ selectedIdPhoto.name }}</span>
+                                <span class="file-size">{{ (selectedIdPhoto.size / 1024 / 1024).toFixed(2) }} MB</span>
+                            </div>
+                            <img *ngIf="idPhotoPreview" [src]="idPhotoPreview" alt="Preview" class="preview-image">
+                        </div>
+
+                        <!-- Upload Button -->
+                        <button class="upload-doc-btn" *ngIf="selectedIdPhoto" (click)="uploadDocument('idPhoto')"
+                            [disabled]="isUploadingDocument">
+                            {{ isUploadingDocument ? 'Uploading...' : 'Upload Document' }}
+                        </button>
+                    </div>
                 </div>
             </div>
 
+            <!-- NIN Verification -->
             <div class="verification-item" [class.verified]="verificationStatus.ninVerified">
                 <div class="verification-icon">
                     {{ verificationStatus.ninVerified ? '✅' : '🆔' }}
                 </div>
                 <div class="verification-content">
                     <h4>NIN Verification</h4>
-                    <p>{{ verificationStatus.ninVerified ? 'Verified' : 'Not verified' }}</p>
-                    <button class="verify-nin-btn" *ngIf="!verificationStatus.ninVerified" [disabled]="true">
-                        Coming Soon
-                    </button>
+                    <p>{{ verificationStatus.ninVerified ? 'Uploaded - Awaiting verification' : 'Not uploaded' }}</p>
+
+                    <!-- File Selection -->
+                    <div class="document-upload-section" *ngIf="!verificationStatus.ninVerified">
+                        <input type="file" id="ninDocumentInput" accept="image/*,.pdf"
+                            (change)="onDocumentSelected($event, 'ninDocument')" style="display: none;">
+                        <label for="ninDocumentInput" class="file-select-btn">
+                            {{ selectedNinDocument ? 'Change File' : 'Select File' }}
+                        </label>
+
+                        <!-- File Preview -->
+                        <div class="file-preview" *ngIf="selectedNinDocument">
+                            <div class="file-info">
+                                <span class="file-name">{{ selectedNinDocument.name }}</span>
+                                <span class="file-size">{{ (selectedNinDocument.size / 1024 / 1024).toFixed(2) }}
+                                    MB</span>
+                            </div>
+                            <img *ngIf="ninDocumentPreview" [src]="ninDocumentPreview" alt="Preview"
+                                class="preview-image">
+                        </div>
+
+                        <!-- Upload Button -->
+                        <button class="upload-doc-btn" *ngIf="selectedNinDocument"
+                            (click)="uploadDocument('ninDocument')" [disabled]="isUploadingDocument">
+                            {{ isUploadingDocument ? 'Uploading...' : 'Upload Document' }}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -380,3 +450,11 @@
         </button>
     </div>
 </div>
+
+<!-- Loading Template -->
+<ng-template #loadingTemplate>
+    <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Loading your profile...</p>
+    </div>
+</ng-template>
