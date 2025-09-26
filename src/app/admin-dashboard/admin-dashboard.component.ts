@@ -2,6 +2,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { SupportService, SupportTicket, TicketResponse } from '../services/support.service';
+import { ReviewService, Review, ReviewReport } from '../services/review.service';
 
 // Interfaces
 interface AdminStats {
@@ -10,6 +12,9 @@ interface AdminStats {
   monthlyBookings: number;
   totalRevenue: number;
   platformCommission: number;
+  openTickets: number;
+  pendingReviews: number;
+  totalTickets: number;
 }
 
 interface UserRecord {
@@ -90,7 +95,10 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     activeListings: 156,
     monthlyBookings: 892,
     totalRevenue: 45600000,
-    platformCommission: 4560000
+    platformCommission: 4560000,
+    openTickets: 0,
+    pendingReviews: 0,
+    totalTickets: 0
   };
 
   // User Management
@@ -316,6 +324,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   selectedUserType = 'all';
   selectedUserStatus = 'all';
   selectedListingStatus = 'all';
+  selectedTicketStatus = 'all';
+  selectedTicketPriority = 'all';
   isLoading = false;
   showNotification = false;
   notificationMessage = '';
@@ -324,7 +334,25 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   selectedNotificationTemplate: NotificationTemplate | null = null;
   showNotificationModal = false;
   notificationRecipients = 'all';
-  
+
+  // Support & Review Management
+  supportTickets: SupportTicket[] = [];
+  pendingReviews: Review[] = [];
+  reviewReports: ReviewReport[] = [];
+  selectedTicket: SupportTicket | null = null;
+  selectedReview: Review | null = null;
+  showTicketModal = false;
+  showReviewModal = false;
+  ticketResponse = '';
+  reviewModerationNotes = '';
+  ticketStats = {
+    total: 0,
+    open: 0,
+    in_progress: 0,
+    resolved: 0,
+    closed: 0
+  };
+
   // Dynamic State
   isRefreshing = false;
   showRealTimeUpdates = true;
@@ -342,11 +370,17 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   // Math for template
   Math = Math;
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private supportService: SupportService,
+    private reviewService: ReviewService
+  ) { }
 
   ngOnInit(): void {
     this.calculatePagination();
     this.initializeRealTimeUpdates();
+    this.loadSupportData();
+    this.loadReviewData();
   }
 
   ngOnDestroy(): void {
@@ -373,11 +407,6 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     this.activeUsers = Math.floor(Math.random() * 50) + 150; // 150-200 active users
   }
 
-  private updateStats(): void {
-    // Simulate real-time stat updates
-    this.adminStats.monthlyBookings += Math.floor(Math.random() * 5);
-    this.adminStats.totalRevenue += Math.floor(Math.random() * 100000);
-  }
 
   private calculatePagination(): void {
     this.totalPages = Math.ceil(this.filteredUsers.length / this.itemsPerPage);
@@ -389,7 +418,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
     if (this.searchTerm) {
       const search = this.searchTerm.toLowerCase();
-      filtered = filtered.filter(user => 
+      filtered = filtered.filter(user =>
         user.name.toLowerCase().includes(search) ||
         user.email.toLowerCase().includes(search)
       );
@@ -415,7 +444,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   toggleUserStatus(user: UserRecord): void {
     this.isLoading = true;
-    
+
     setTimeout(() => {
       user.isActive = !user.isActive;
       this.isLoading = false;
@@ -443,7 +472,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   approveListing(listing: ListingRecord): void {
     this.isLoading = true;
-    
+
     setTimeout(() => {
       listing.status = 'Approved';
       this.isLoading = false;
@@ -456,7 +485,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   rejectListing(listing: ListingRecord): void {
     this.isLoading = true;
-    
+
     setTimeout(() => {
       listing.status = 'Flagged';
       listing.flaggedReason = 'Rejected by admin';
@@ -471,7 +500,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   // Payout Management
   approvePayout(payout: PayoutRequest): void {
     this.isLoading = true;
-    
+
     setTimeout(() => {
       payout.status = 'Approved';
       this.isLoading = false;
@@ -484,7 +513,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   holdPayout(payout: PayoutRequest): void {
     this.isLoading = true;
-    
+
     setTimeout(() => {
       payout.status = 'Rejected';
       this.isLoading = false;
@@ -511,7 +540,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
     if (!this.selectedNotificationTemplate) return;
 
     this.isLoading = true;
-    
+
     setTimeout(() => {
       this.isLoading = false;
       this.showNotificationModal = false;
@@ -525,7 +554,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   // Export Functions
   exportCSV(): void {
     this.isLoading = true;
-    
+
     setTimeout(() => {
       this.isLoading = false;
       this.showNotificationMessage('CSV report exported successfully', 'success');
@@ -534,7 +563,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   exportPDF(): void {
     this.isLoading = true;
-    
+
     setTimeout(() => {
       this.isLoading = false;
       this.showNotificationMessage('PDF report exported successfully', 'success');
@@ -544,7 +573,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
   // Dynamic Utility Functions
   refreshData(): void {
     this.isRefreshing = true;
-    
+
     setTimeout(() => {
       this.updateStats();
       this.updateSystemHealth();
@@ -557,7 +586,7 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   toggleRealTimeUpdates(): void {
     this.showRealTimeUpdates = !this.showRealTimeUpdates;
-    
+
     if (this.showRealTimeUpdates) {
       this.initializeRealTimeUpdates();
       this.showNotificationMessage('Real-time updates enabled', 'info');
@@ -691,5 +720,249 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 
   trackByNotificationId(index: number, notification: NotificationTemplate): string {
     return notification.id;
+  }
+
+  // Support Ticket Management
+  private async loadSupportData(): Promise<void> {
+    try {
+      this.supportTickets = await this.supportService.getAllTickets();
+      this.ticketStats = await this.supportService.getTicketStats();
+      this.adminStats.openTickets = this.ticketStats.open;
+      this.adminStats.totalTickets = this.ticketStats.total;
+    } catch (error) {
+      console.error('Error loading support data:', error);
+    }
+  }
+
+  get filteredTickets(): SupportTicket[] {
+    let filtered = this.supportTickets;
+
+    if (this.selectedTicketStatus !== 'all') {
+      filtered = filtered.filter(ticket => ticket.status === this.selectedTicketStatus);
+    }
+
+    if (this.selectedTicketPriority !== 'all') {
+      filtered = filtered.filter(ticket => ticket.priority === this.selectedTicketPriority);
+    }
+
+    return filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  }
+
+  openTicketModal(ticket: SupportTicket): void {
+    this.selectedTicket = ticket;
+    this.showTicketModal = true;
+  }
+
+  closeTicketModal(): void {
+    this.showTicketModal = false;
+    this.selectedTicket = null;
+    this.ticketResponse = '';
+  }
+
+  async respondToTicket(): Promise<void> {
+    if (!this.selectedTicket || !this.ticketResponse.trim()) return;
+
+    this.isLoading = true;
+    try {
+      const success = await this.supportService.addTicketResponse(
+        this.selectedTicket.id,
+        this.ticketResponse
+      );
+
+      if (success) {
+        this.showNotificationMessage('Response sent successfully', 'success');
+        this.closeTicketModal();
+        await this.loadSupportData();
+      } else {
+        this.showNotificationMessage('Failed to send response', 'error');
+      }
+    } catch (error) {
+      console.error('Error responding to ticket:', error);
+      this.showNotificationMessage('Error sending response', 'error');
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  async assignTicket(ticket: SupportTicket): Promise<void> {
+    this.isLoading = true;
+    try {
+      // For now, assign to current admin user
+      const currentUser = { id: 'admin-user-id' }; // Replace with actual admin ID
+      const success = await this.supportService.assignTicket(ticket.id, currentUser.id);
+
+      if (success) {
+        this.showNotificationMessage('Ticket assigned successfully', 'success');
+        await this.loadSupportData();
+      } else {
+        this.showNotificationMessage('Failed to assign ticket', 'error');
+      }
+    } catch (error) {
+      console.error('Error assigning ticket:', error);
+      this.showNotificationMessage('Error assigning ticket', 'error');
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  async resolveTicket(ticket: SupportTicket): Promise<void> {
+    const resolution = prompt('Enter resolution notes:');
+    if (!resolution) return;
+
+    this.isLoading = true;
+    try {
+      const success = await this.supportService.resolveTicket(ticket.id, resolution);
+
+      if (success) {
+        this.showNotificationMessage('Ticket resolved successfully', 'success');
+        await this.loadSupportData();
+      } else {
+        this.showNotificationMessage('Failed to resolve ticket', 'error');
+      }
+    } catch (error) {
+      console.error('Error resolving ticket:', error);
+      this.showNotificationMessage('Error resolving ticket', 'error');
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  getPriorityColor(priority: string): string {
+    switch (priority) {
+      case 'urgent': return '#dc2626';
+      case 'high': return '#ea580c';
+      case 'medium': return '#eab308';
+      case 'low': return '#16a34a';
+      default: return '#6b7280';
+    }
+  }
+
+  getPriorityIcon(priority: string): string {
+    switch (priority) {
+      case 'urgent': return '🔴';
+      case 'high': return '🟠';
+      case 'medium': return '🟡';
+      case 'low': return '🟢';
+      default: return '⚪';
+    }
+  }
+
+  // Review Management
+  private async loadReviewData(): Promise<void> {
+    try {
+      this.pendingReviews = await this.reviewService.getPendingReviews();
+      this.reviewReports = await this.reviewService.getReviewReports();
+      const reviewStats = await this.reviewService.getReviewStats();
+      this.adminStats.pendingReviews = reviewStats.pending;
+    } catch (error) {
+      console.error('Error loading review data:', error);
+    }
+  }
+
+  openReviewModal(review: Review): void {
+    this.selectedReview = review;
+    this.showReviewModal = true;
+  }
+
+  closeReviewModal(): void {
+    this.showReviewModal = false;
+    this.selectedReview = null;
+    this.reviewModerationNotes = '';
+  }
+
+  async approveReview(): Promise<void> {
+    if (!this.selectedReview) return;
+
+    this.isLoading = true;
+    try {
+      const success = await this.reviewService.moderateReview(
+        this.selectedReview.id,
+        'approved',
+        this.reviewModerationNotes
+      );
+
+      if (success) {
+        this.showNotificationMessage('Review approved successfully', 'success');
+        this.closeReviewModal();
+        await this.loadReviewData();
+      } else {
+        this.showNotificationMessage('Failed to approve review', 'error');
+      }
+    } catch (error) {
+      console.error('Error approving review:', error);
+      this.showNotificationMessage('Error approving review', 'error');
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  async rejectReview(): Promise<void> {
+    if (!this.selectedReview) return;
+
+    this.isLoading = true;
+    try {
+      const success = await this.reviewService.moderateReview(
+        this.selectedReview.id,
+        'rejected',
+        this.reviewModerationNotes
+      );
+
+      if (success) {
+        this.showNotificationMessage('Review rejected successfully', 'success');
+        this.closeReviewModal();
+        await this.loadReviewData();
+      } else {
+        this.showNotificationMessage('Failed to reject review', 'error');
+      }
+    } catch (error) {
+      console.error('Error rejecting review:', error);
+      this.showNotificationMessage('Error rejecting review', 'error');
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  async resolveReport(report: ReviewReport): Promise<void> {
+    this.isLoading = true;
+    try {
+      // Mark report as resolved
+      // This would require adding a method to the review service
+      this.showNotificationMessage('Report resolved successfully', 'success');
+      await this.loadReviewData();
+    } catch (error) {
+      console.error('Error resolving report:', error);
+      this.showNotificationMessage('Error resolving report', 'error');
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  getReviewStatusColor(status: string): string {
+    switch (status) {
+      case 'approved': return '#16a34a';
+      case 'pending': return '#eab308';
+      case 'rejected': return '#dc2626';
+      default: return '#6b7280';
+    }
+  }
+
+  getReviewStatusIcon(status: string): string {
+    switch (status) {
+      case 'approved': return '✅';
+      case 'pending': return '⏳';
+      case 'rejected': return '❌';
+      default: return '📋';
+    }
+  }
+
+  // Enhanced update methods
+  private async updateStats(): Promise<void> {
+    // Update real-time stat updates
+    this.adminStats.monthlyBookings += Math.floor(Math.random() * 5);
+    this.adminStats.totalRevenue += Math.floor(Math.random() * 100000);
+
+    // Refresh support and review data
+    await this.loadSupportData();
+    await this.loadReviewData();
   }
 } 

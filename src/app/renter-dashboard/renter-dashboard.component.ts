@@ -2,6 +2,8 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { AuthService } from '../services/auth.service';
+import { UserProfile } from '../interfaces/auth.interface';
 
 // Interfaces
 interface RenterStats {
@@ -73,27 +75,7 @@ interface PaymentHistory {
   method: 'Card' | 'Bank Transfer' | 'Wallet' | 'Cash';
 }
 
-interface UserProfile {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  address: string;
-  city: string;
-  state: string;
-  zipCode: string;
-  dateOfBirth: Date;
-  licenseNumber: string;
-  profileImage: string;
-  preferences: {
-    notifications: boolean;
-    emailUpdates: boolean;
-    smsUpdates: boolean;
-    language: string;
-    currency: string;
-  };
-}
+// Using UserProfile from auth.interface.ts
 
 @Component({
   selector: 'app-renter-dashboard',
@@ -330,28 +312,8 @@ export class RenterDashboardComponent implements OnInit, OnDestroy {
     }
   ];
 
-  // User Profile Data
-  userProfile: UserProfile = {
-    id: '1',
-    firstName: 'Adebayo',
-    lastName: 'Johnson',
-    email: 'adebayo.johnson@email.com',
-    phone: '+234 801 234 5678',
-    address: '123 Victoria Island',
-    city: 'Lagos',
-    state: 'Lagos',
-    zipCode: '100001',
-    dateOfBirth: new Date('1990-05-15'),
-    licenseNumber: 'NGR-2024-123456',
-    profileImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-    preferences: {
-      notifications: true,
-      emailUpdates: true,
-      smsUpdates: false,
-      language: 'English',
-      currency: 'NGN'
-    }
-  };
+  // User Profile Data - will be populated from AuthService
+  userProfile: any = null;
 
   // Interactive Features
   searchTerm = '';
@@ -389,7 +351,7 @@ export class RenterDashboardComponent implements OnInit, OnDestroy {
 
   // Profile Update Features
   showProfileModal = false;
-  editingProfile: UserProfile | null = null;
+  editingProfile: any = null;
   profileFormData: any = {};
   showPasswordModal = false;
   passwordData = {
@@ -423,9 +385,13 @@ export class RenterDashboardComponent implements OnInit, OnDestroy {
   // Math object for template access
   Math = Math;
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private authService: AuthService
+  ) { }
 
   ngOnInit(): void {
+    this.loadUserProfile();
     this.updateStats();
     this.startRealTimeUpdates();
     this.initializeAnimations();
@@ -435,6 +401,18 @@ export class RenterDashboardComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.updateInterval) {
       clearInterval(this.updateInterval);
+    }
+  }
+
+  private loadUserProfile(): void {
+    // Get user profile from AuthService
+    this.userProfile = this.authService.currentProfile();
+
+    // If no profile is loaded, try to get it from the auth state
+    if (!this.userProfile) {
+      this.authService.authState$.subscribe(authState => {
+        this.userProfile = authState.profile;
+      });
     }
   }
 
@@ -522,7 +500,7 @@ export class RenterDashboardComponent implements OnInit, OnDestroy {
   submitRating(): void {
     if (this.selectedRental && this.ratingValue > 0) {
       this.isLoading = true;
-      
+
       // Simulate API call
       setTimeout(() => {
         this.selectedRental!.rating = this.ratingValue;
@@ -543,7 +521,7 @@ export class RenterDashboardComponent implements OnInit, OnDestroy {
   bookAgain(car: FavoriteCar): void {
     this.isLoading = true;
     console.log(`Booking again: ${car.title}`);
-    
+
     setTimeout(() => {
       this.showNotificationMessage(`Redirecting to book ${car.title}...`, 'info');
       this.isLoading = false;
@@ -579,7 +557,7 @@ export class RenterDashboardComponent implements OnInit, OnDestroy {
   findCar(): void {
     this.isLoading = true;
     console.log('Navigating to car search');
-    
+
     setTimeout(() => {
       this.isLoading = false;
       this.router.navigate(['/search']);
@@ -600,11 +578,11 @@ export class RenterDashboardComponent implements OnInit, OnDestroy {
 
   get filteredPaymentHistory(): PaymentHistory[] {
     let filtered = this.paymentHistory;
-    
+
     if (this.paymentHistoryFilter !== 'all') {
       filtered = filtered.filter(payment => payment.type === this.paymentHistoryFilter);
     }
-    
+
     filtered.sort((a, b) => {
       let comparison = 0;
       switch (this.paymentHistorySortBy) {
@@ -623,7 +601,7 @@ export class RenterDashboardComponent implements OnInit, OnDestroy {
       }
       return this.paymentHistorySortOrder === 'asc' ? -comparison : comparison;
     });
-    
+
     return filtered;
   }
 
@@ -661,7 +639,7 @@ export class RenterDashboardComponent implements OnInit, OnDestroy {
 
   saveProfile(): void {
     this.isLoading = true;
-    
+
     // Simulate API call
     setTimeout(() => {
       this.userProfile = { ...this.profileFormData };
@@ -702,7 +680,7 @@ export class RenterDashboardComponent implements OnInit, OnDestroy {
     }
 
     this.isLoading = true;
-    
+
     // Simulate API call
     setTimeout(() => {
       this.showPasswordModal = false;
@@ -744,7 +722,7 @@ export class RenterDashboardComponent implements OnInit, OnDestroy {
   exportData(): void {
     this.isLoading = true;
     console.log(`Exporting data in ${this.exportFormat} format`);
-    
+
     setTimeout(() => {
       this.showNotificationMessage(`Data exported successfully in ${this.exportFormat.toUpperCase()} format`, 'success');
       this.showExportModal = false;
@@ -756,7 +734,7 @@ export class RenterDashboardComponent implements OnInit, OnDestroy {
   refreshData(): void {
     this.isRefreshing = true;
     console.log('Refreshing dashboard data...');
-    
+
     setTimeout(() => {
       this.updateStats();
       this.calculatePagination();
@@ -842,7 +820,7 @@ export class RenterDashboardComponent implements OnInit, OnDestroy {
     this.notificationMessage = message;
     this.notificationType = type;
     this.showNotification = true;
-    
+
     setTimeout(() => {
       this.showNotification = false;
     }, 3000);
@@ -851,29 +829,29 @@ export class RenterDashboardComponent implements OnInit, OnDestroy {
   // Enhanced filter and sort methods
   get filteredRentalHistory(): RentalHistory[] {
     let filtered = this.rentalHistory;
-    
+
     // Status filter
     if (this.selectedStatus !== 'all') {
       filtered = filtered.filter(rental => rental.status === this.selectedStatus);
     }
-    
+
     // Search filter
     if (this.searchTerm) {
-      filtered = filtered.filter(rental => 
+      filtered = filtered.filter(rental =>
         rental.car.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         rental.hostName.toLowerCase().includes(this.searchTerm.toLowerCase())
       );
     }
-    
+
     // Advanced filters
     if (this.filterOptions.dateRange !== 'all') {
       const now = new Date();
-      const daysAgo = this.filterOptions.dateRange === 'week' ? 7 : 
-                     this.filterOptions.dateRange === 'month' ? 30 : 90;
+      const daysAgo = this.filterOptions.dateRange === 'week' ? 7 :
+        this.filterOptions.dateRange === 'month' ? 30 : 90;
       const cutoffDate = new Date(now.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
       filtered = filtered.filter(rental => rental.dates.start >= cutoffDate);
     }
-    
+
     if (this.filterOptions.amountRange !== 'all') {
       const ranges = {
         'low': [0, 50000],
@@ -883,12 +861,12 @@ export class RenterDashboardComponent implements OnInit, OnDestroy {
       const [min, max] = ranges[this.filterOptions.amountRange as keyof typeof ranges];
       filtered = filtered.filter(rental => rental.amountPaid >= min && rental.amountPaid <= max);
     }
-    
+
     if (this.filterOptions.rating !== 'all') {
       const ratingValue = parseInt(this.filterOptions.rating);
       filtered = filtered.filter(rental => rental.rating === ratingValue);
     }
-    
+
     // Sort
     filtered.sort((a, b) => {
       let comparison = 0;
@@ -912,12 +890,12 @@ export class RenterDashboardComponent implements OnInit, OnDestroy {
       }
       return this.sortOrder === 'asc' ? -comparison : comparison;
     });
-    
+
     return filtered;
   }
 
   get unratedRentals(): RentalHistory[] {
-    return this.rentalHistory.filter(rental => 
+    return this.rentalHistory.filter(rental =>
       rental.status === 'Completed' && !rental.rating
     );
   }

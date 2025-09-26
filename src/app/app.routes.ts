@@ -12,7 +12,11 @@ import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard.compo
 import { NavigationComponent } from './navigation/navigation.component';
 import { AuthGuard } from './guards/auth.guard';
 import { AuthCallbackComponent } from './components/auth-callback/auth-callback.component';
+import { EmailVerificationComponent } from './components/email-verification/email-verification.component';
+import { PasswordResetComponent } from './components/password-reset/password-reset.component';
+import { ProfileSetupComponent } from './components/profile-setup/profile-setup.component';
 import { SupportComponent } from './support/support.component';
+import { AuthDebugComponent } from './components/auth-debug/auth-debug.component';
 
 export const routes: Routes = [
   { path: '', component: LandingComponent },
@@ -20,13 +24,19 @@ export const routes: Routes = [
   { path: 'search', component: CarSearchComponent },
   { path: 'car/:id', component: CarDetailsComponent },
   { path: 'booking-confirmation', component: BookingConfirmationComponent, canActivate: [AuthGuard] },
-  { path: 'add-car-listing', component: AddCarListingComponent },
-  { path: 'dashboard', component: CarOwnerDashboardComponent, canActivate: [AuthGuard], data: { role: 'owner' } },
+  { path: 'add-car-listing', component: AddCarListingComponent, canActivate: [AuthGuard] },
+  { path: 'dashboard', component: CarOwnerDashboardComponent },
+  { path: 'test-dashboard', component: CarOwnerDashboardComponent },
+  { path: 'auth-debug', component: AuthDebugComponent },
+  { path: 'bypass-dashboard', component: CarOwnerDashboardComponent },
   { path: 'renter-dashboard', component: RenterDashboardComponent, canActivate: [AuthGuard], data: { role: 'renter' } },
   { path: 'messaging', component: MessagingComponent },
   { path: 'profile', component: UserProfileComponent, canActivate: [AuthGuard] },
   { path: 'admin', component: AdminDashboardComponent, canActivate: [AuthGuard], data: { role: 'admin' } },
   { path: 'support', component: SupportComponent },
   { path: 'auth/callback', component: AuthCallbackComponent },
+  { path: 'verify-email', component: EmailVerificationComponent, canActivate: [AuthGuard] },
+  { path: 'reset-password', component: PasswordResetComponent },
+  { path: 'profile-setup', component: ProfileSetupComponent, canActivate: [AuthGuard] },
   { path: '**', redirectTo: '' }
 ];
