@@ -3,8 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
+import { SupportService, FAQ, CreateTicketData } from '../services/support.service';
+import { AuthService } from '../services/auth.service';
 
-interface FAQ {
+interface LocalFAQ {
   id: string;
   question: string;
   answer: string;
@@ -64,6 +66,10 @@ export class SupportComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private searchSubject$ = new Subject<string>();
 
+  // Database FAQs
+  databaseFAQs: FAQ[] = [];
+  isLoggedIn = false;
+
   // Help Categories
   helpCategories: HelpCategory[] = [
     {
@@ -111,7 +117,7 @@ export class SupportComponent implements OnInit, OnDestroy {
   ];
 
   // FAQ Data
-  faqs: FAQ[] = [
+  faqs: LocalFAQ[] = [
     {
       id: '1',
       question: 'How do I create an account on HireMyCar?',
@@ -266,10 +272,17 @@ export class SupportComponent implements OnInit, OnDestroy {
     }
   ];
 
+  constructor(
+    private supportService: SupportService,
+    private authService: AuthService
+  ) { }
+
   ngOnInit(): void {
     this.initializeSearch();
     this.loadRecentSearches();
     this.loadPopularTopics();
+    this.checkAuthStatus();
+    this.loadFAQs();
   }
 
   ngOnDestroy(): void {
@@ -284,27 +297,11 @@ export class SupportComponent implements OnInit, OnDestroy {
         distinctUntilChanged(),
         takeUntil(this.destroy$)
       )
-      .subscribe(query => {
-        this.performSearch(query);
+      .subscribe(async query => {
+        await this.performSearch(query);
       });
   }
 
-  private performSearch(query: string): void {
-    if (!query.trim()) {
-      this.searchSuggestions = [];
-      this.showSuggestions = false;
-      return;
-    }
-
-    this.isLoading = true;
-    
-    // Simulate API call delay
-    setTimeout(() => {
-      this.searchSuggestions = this.generateSearchSuggestions(query);
-      this.showSuggestions = this.searchSuggestions.length > 0;
-      this.isLoading = false;
-    }, 200);
-  }
 
   private generateSearchSuggestions(query: string): SearchSuggestion[] {
     const suggestions: SearchSuggestion[] = [];
@@ -312,8 +309,8 @@ export class SupportComponent implements OnInit, OnDestroy {
 
     // Search in FAQs
     this.faqs.forEach(faq => {
-      if (faq.question.toLowerCase().includes(lowerQuery) || 
-          faq.answer.toLowerCase().includes(lowerQuery)) {
+      if (faq.question.toLowerCase().includes(lowerQuery) ||
+        faq.answer.toLowerCase().includes(lowerQuery)) {
         suggestions.push({
           id: `faq-${faq.id}`,
           text: faq.question,
@@ -326,8 +323,8 @@ export class SupportComponent implements OnInit, OnDestroy {
     // Search in help articles
     this.helpArticles.forEach(article => {
       if (article.title.toLowerCase().includes(lowerQuery) ||
-          article.content.toLowerCase().includes(lowerQuery) ||
-          article.tags.some(tag => tag.toLowerCase().includes(lowerQuery))) {
+        article.content.toLowerCase().includes(lowerQuery) ||
+        article.tags.some(tag => tag.toLowerCase().includes(lowerQuery))) {
         suggestions.push({
           id: `article-${article.id}`,
           text: article.title,
@@ -340,7 +337,7 @@ export class SupportComponent implements OnInit, OnDestroy {
     // Search in categories
     this.helpCategories.forEach(category => {
       if (category.title.toLowerCase().includes(lowerQuery) ||
-          category.description.toLowerCase().includes(lowerQuery)) {
+        category.description.toLowerCase().includes(lowerQuery)) {
         suggestions.push({
           id: `category-${category.id}`,
           text: category.title,
@@ -378,14 +375,14 @@ export class SupportComponent implements OnInit, OnDestroy {
 
   private saveRecentSearch(query: string): void {
     if (!query.trim()) return;
-    
+
     // Remove if already exists
     this.recentSearches = this.recentSearches.filter(s => s !== query);
     // Add to beginning
     this.recentSearches.unshift(query);
     // Keep only last 5
     this.recentSearches = this.recentSearches.slice(0, 5);
-    
+
     // Save to localStorage
     localStorage.setItem('hiremycar-recent-searches', JSON.stringify(this.recentSearches));
   }
@@ -414,7 +411,7 @@ export class SupportComponent implements OnInit, OnDestroy {
     this.searchQuery = suggestion.text;
     this.showSuggestions = false;
     this.saveRecentSearch(suggestion.text);
-    
+
     // Navigate to relevant section
     if (suggestion.type === 'category') {
       this.selectedCategory = suggestion.category || 'all';
@@ -441,8 +438,8 @@ export class SupportComponent implements OnInit, OnDestroy {
     this.onSearchInput({ target: { value: topic } } as any);
   }
 
-  get filteredFAQs(): FAQ[] {
-    let filtered = this.faqs;
+  get filteredFAQs(): (FAQ | LocalFAQ)[] {
+    let filtered = this.allFAQs;
 
     // Filter by category
     if (this.selectedCategory !== 'all') {
@@ -452,7 +449,7 @@ export class SupportComponent implements OnInit, OnDestroy {
     // Filter by search query
     if (this.searchQuery.trim()) {
       const query = this.searchQuery.toLowerCase();
-      filtered = filtered.filter(faq => 
+      filtered = filtered.filter(faq =>
         faq.question.toLowerCase().includes(query) ||
         faq.answer.toLowerCase().includes(query)
       );
@@ -472,7 +469,7 @@ export class SupportComponent implements OnInit, OnDestroy {
     // Filter by search query
     if (this.searchQuery.trim()) {
       const query = this.searchQuery.toLowerCase();
-      filtered = filtered.filter(article => 
+      filtered = filtered.filter(article =>
         article.title.toLowerCase().includes(query) ||
         article.content.toLowerCase().includes(query) ||
         article.tags.some(tag => tag.toLowerCase().includes(query))
@@ -498,9 +495,9 @@ export class SupportComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       const faqSection = document.getElementById('faq-section');
       if (faqSection) {
-        faqSection.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'start' 
+        faqSection.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
         });
       }
     }, 100);
@@ -533,34 +530,52 @@ export class SupportComponent implements OnInit, OnDestroy {
   }
 
   // Enhanced contact form methods
-  onSubmitContactForm(): void {
+  async onSubmitContactFormNew(): Promise<void> {
+    console.log('🚀 UNIQUE DEBUG: Form submission started at', new Date().toISOString());
+    console.log('Form submission started');
+    console.log('Form data:', this.contactForm);
+    console.log('Form valid:', this.isFormValid());
+
     if (this.isFormValid()) {
       this.isSubmitting = true;
-      
-      // Simulate form submission with real validation
-      const formData = {
-        ...this.contactForm,
-        timestamp: new Date().toISOString(),
-        userAgent: navigator.userAgent,
-        url: window.location.href
-      };
 
-      // In real app, send to API
-      console.log('Contact form submitted:', formData);
-      
-      setTimeout(() => {
+      try {
+        const ticketData: CreateTicketData = {
+          subject: this.contactForm.subject,
+          message: this.contactForm.message,
+          category: this.contactForm.category as any || 'general',
+          priority: this.contactForm.priority as any || 'medium'
+        };
+
+        console.log('Creating ticket with data:', ticketData);
+        const result = await this.supportService.createTicket(ticketData);
+        console.log('Ticket creation result:', result);
+
+        if (result.success) {
+          this.submitSuccess = true;
+          this.resetForm();
+
+          // Track form submission
+          this.trackContactSubmission(ticketData);
+
+          // Hide success message after 5 seconds
+          setTimeout(() => {
+            this.submitSuccess = false;
+          }, 5000);
+        } else {
+          console.error('Failed to create ticket:', result.error);
+          // Show error message to user
+          alert('Failed to submit your request: ' + result.error);
+        }
+      } catch (error) {
+        console.error('Error submitting contact form:', error);
+        alert('An error occurred. Please try again.');
+      } finally {
         this.isSubmitting = false;
-        this.submitSuccess = true;
-        this.resetForm();
-        
-        // Track form submission
-        this.trackContactSubmission(formData);
-        
-        // Hide success message after 5 seconds
-        setTimeout(() => {
-          this.submitSuccess = false;
-        }, 5000);
-      }, 2000);
+      }
+    } else {
+      console.log('Form validation failed');
+      alert('Please fill in all required fields (Subject, Message, Category)');
     }
   }
 
@@ -573,10 +588,9 @@ export class SupportComponent implements OnInit, OnDestroy {
 
   isFormValid(): boolean {
     return !!(
-      this.contactForm.name &&
-      this.contactForm.email &&
       this.contactForm.subject &&
-      this.contactForm.message
+      this.contactForm.message &&
+      this.contactForm.category
     );
   }
 
@@ -600,5 +614,85 @@ export class SupportComponent implements OnInit, OnDestroy {
   getCategoryTitle(categoryId: string): string {
     const category = this.helpCategories.find(cat => cat.id === categoryId);
     return category?.title || 'General';
+  }
+
+  // New methods for database integration
+  private async checkAuthStatus(): Promise<void> {
+    this.isLoggedIn = !!this.authService.currentUser();
+  }
+
+  private async loadFAQs(): Promise<void> {
+    try {
+      this.databaseFAQs = await this.supportService.getFAQs();
+    } catch (error) {
+      console.error('Error loading FAQs:', error);
+    }
+  }
+
+  async searchFAQs(query: string): Promise<void> {
+    if (!query.trim()) {
+      await this.loadFAQs();
+      return;
+    }
+
+    try {
+      this.databaseFAQs = await this.supportService.searchFAQs(query);
+    } catch (error) {
+      console.error('Error searching FAQs:', error);
+    }
+  }
+
+  get allFAQs(): (FAQ | LocalFAQ)[] {
+    // Combine database FAQs with local FAQs
+    const dbFAQs = this.databaseFAQs.map(faq => ({
+      id: faq.id,
+      question: faq.question,
+      answer: faq.answer,
+      category: faq.category,
+      isExpanded: false
+    }));
+
+    return [...dbFAQs, ...this.faqs];
+  }
+
+  // Enhanced search to include database FAQs
+  private async performSearch(query: string): Promise<void> {
+    if (!query.trim()) {
+      this.searchSuggestions = [];
+      this.showSuggestions = false;
+      await this.loadFAQs();
+      return;
+    }
+
+    this.isLoading = true;
+
+    try {
+      // Search in database FAQs
+      const dbResults = await this.supportService.searchFAQs(query);
+
+      // Search in local FAQs
+      const localResults = this.generateSearchSuggestions(query);
+
+      // Combine results
+      const dbSuggestions = dbResults.map(faq => ({
+        id: `db-faq-${faq.id}`,
+        text: faq.question,
+        type: 'faq' as const,
+        category: faq.category
+      }));
+
+      this.searchSuggestions = [...dbSuggestions, ...localResults].slice(0, 5);
+      this.showSuggestions = this.searchSuggestions.length > 0;
+
+      // Update displayed FAQs
+      this.databaseFAQs = dbResults;
+    } catch (error) {
+      console.error('Error performing search:', error);
+      // Fallback to local search
+      this.searchSuggestions = this.generateSearchSuggestions(query);
+      this.showSuggestions = this.searchSuggestions.length > 0;
+    } finally {
+      this.isLoading = false;
+    }
   }
 }

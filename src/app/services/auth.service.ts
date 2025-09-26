@@ -257,6 +257,104 @@ export class AuthService {
     }
   }
 
+  // Email verification methods
+  async sendEmailVerification(): Promise<{ success: boolean; error?: AuthError }> {
+    try {
+      const { error } = await this.supabase.client.auth.resend({
+        type: 'signup',
+        email: this.getUserEmail() || ''
+      });
+
+      if (error) {
+        return { success: false, error: { message: error.message, code: error.message } };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: { message: error.message || 'Failed to send verification email' } };
+    }
+  }
+
+  async verifyEmail(token: string, type: string): Promise<{ success: boolean; error?: AuthError }> {
+    try {
+      const { data, error } = await this.supabase.client.auth.verifyOtp({
+        token_hash: token,
+        type: type as any
+      });
+
+      if (error) {
+        return { success: false, error: { message: error.message, code: error.message } };
+      }
+
+      if (data.user) {
+        await this.loadUserProfile(data.user);
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: { message: error.message || 'Email verification failed' } };
+    }
+  }
+
+  // Password reset methods
+  async sendPasswordResetEmail(email: string): Promise<{ success: boolean; error?: AuthError }> {
+    try {
+      const { error } = await this.supabase.client.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`
+      });
+
+      if (error) {
+        return { success: false, error: { message: error.message, code: error.message } };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: { message: error.message || 'Failed to send password reset email' } };
+    }
+  }
+
+  async resetPassword(newPassword: string): Promise<{ success: boolean; error?: AuthError }> {
+    try {
+      const { error } = await this.supabase.client.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        return { success: false, error: { message: error.message, code: error.message } };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: { message: error.message || 'Password reset failed' } };
+    }
+  }
+
+  async updatePassword(currentPassword: string, newPassword: string): Promise<{ success: boolean; error?: AuthError }> {
+    try {
+      // First verify current password by attempting to sign in
+      const { error: signInError } = await this.supabase.client.auth.signInWithPassword({
+        email: this.getUserEmail() || '',
+        password: currentPassword
+      });
+
+      if (signInError) {
+        return { success: false, error: { message: 'Current password is incorrect' } };
+      }
+
+      // Update to new password
+      const { error } = await this.supabase.client.auth.updateUser({
+        password: newPassword
+      });
+
+      if (error) {
+        return { success: false, error: { message: error.message, code: error.message } };
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: { message: error.message || 'Password update failed' } };
+    }
+
   async updateProfile(updates: Partial<UserProfile>): Promise<{ success: boolean; error?: AuthError }> {
     try {
       const currentProfile = this.currentProfile();
