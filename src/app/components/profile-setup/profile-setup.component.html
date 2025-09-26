@@ -1,0 +1,129 @@
+<div class="profile-setup-container">
+    <div class="profile-setup-card">
+        <div class="header">
+            <div class="icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M12 12C14.21 12 16 10.21 16 8C16 5.79 14.21 4 12 4C9.79 4 8 5.79 8 8C8 10.21 9.79 12 12 12ZM12 14C9.33 14 4 15.34 4 18V20H20V18C20 15.34 14.67 14 12 14Z"
+                        fill="currentColor" />
+                </svg>
+            </div>
+            <h1>Complete Your Profile</h1>
+            <p class="subtitle">Help us personalize your experience by completing your profile</p>
+        </div>
+
+        <div class="content">
+            <!-- Success state -->
+            <div *ngIf="success" class="success-message">
+                <div class="success-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z" fill="currentColor" />
+                    </svg>
+                </div>
+                <h3>Profile Updated Successfully!</h3>
+                <p>Your profile has been updated. Redirecting you to your dashboard...</p>
+            </div>
+
+            <!-- Profile form -->
+            <form *ngIf="!success" (ngSubmit)="onSubmit()" class="profile-form">
+                <div class="form-section">
+                    <h3>Basic Information</h3>
+
+                    <div class="form-group">
+                        <label for="fullName">Full Name *</label>
+                        <input type="text" id="fullName" [(ngModel)]="profileData.full_name" name="fullName"
+                            placeholder="Enter your full name" class="form-control" [class.error]="error" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="phoneNumber">Phone Number *</label>
+                        <input type="tel" id="phoneNumber" [(ngModel)]="profileData.phone_number" name="phoneNumber"
+                            placeholder="Enter your phone number" class="form-control" [class.error]="error" required />
+                    </div>
+
+                    <div class="form-group">
+                        <label for="userType">I want to:</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="userType" value="renter" [(ngModel)]="profileData.user_type"
+                                    required />
+                                <span class="radio-custom"></span>
+                                <div class="radio-content">
+                                    <strong>Rent Cars</strong>
+                                    <p>Find and book cars for your trips</p>
+                                </div>
+                            </label>
+
+                            <label class="radio-option">
+                                <input type="radio" name="userType" value="owner" [(ngModel)]="profileData.user_type"
+                                    required />
+                                <span class="radio-custom"></span>
+                                <div class="radio-content">
+                                    <strong>List My Car</strong>
+                                    <p>Earn money by renting out your car</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Location (Optional)</h3>
+                    <p class="section-description">This helps us show you relevant cars and improve your experience</p>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="city">City</label>
+                            <input type="text" id="city" [(ngModel)]="profileData.city" name="city"
+                                placeholder="Enter your city" class="form-control" />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="state">State</label>
+                            <input type="text" id="state" [(ngModel)]="profileData.state" name="state"
+                                placeholder="Enter your state" class="form-control" />
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="address">Address</label>
+                        <textarea id="address" [(ngModel)]="profileData.address" name="address"
+                            placeholder="Enter your address (optional)" class="form-control textarea"
+                            rows="3"></textarea>
+                    </div>
+                </div>
+
+                <!-- Error message -->
+                <div *ngIf="error" class="error-message">
+                    <div class="error-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path
+                                d="M12 2C6.48 2 2 6.48 2 12S6.48 22 12 22 22 17.52 22 12 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z"
+                                fill="currentColor" />
+                        </svg>
+                    </div>
+                    <p>{{ error.message }}</p>
+                </div>
+
+                <!-- Action buttons -->
+                <div class="actions">
+                    <button type="submit" class="btn btn-primary" [disabled]="isLoading || !isFormValid()">
+                        <span *ngIf="isLoading" class="spinner"></span>
+                        {{ isLoading ? 'Updating...' : 'Complete Profile' }}
+                    </button>
+
+                    <button type="button" class="btn btn-secondary" (click)="onSkip()" [disabled]="isLoading">
+                        Skip for Now
+                    </button>
+                </div>
+            </form>
+
+            <!-- Back to login button -->
+            <div class="back-actions">
+                <button type="button" class="btn btn-link" (click)="onBackToLogin()">
+                    Back to Login
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
