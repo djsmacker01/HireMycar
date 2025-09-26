@@ -179,8 +179,21 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
     font-size: 1.75rem;
 
     .logo-icon {
-      font-size: 2.25rem;
+      width: 2rem;
+      height: 2rem;
+      flex-shrink: 0;
       animation: professionalBounce 3s ease-in-out infinite;
+      
+      svg {
+        width: 100%;
+        height: 100%;
+      }
+    }
+
+    .logo-text-container {
+      display: flex;
+      flex-direction: column;
+      line-height: 1.2;
     }
 
     .logo-text {
@@ -190,13 +203,15 @@ $shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 
       background-clip: text;
       font-weight: 900;
       letter-spacing: -0.025em;
+      font-size: 1.5rem;
+      margin: 0;
     }
 
     .logo-domain {
-      color: $gray-400;
-      font-size: 1.125rem;
+      color: #f59e0b;
+      font-size: 0.75rem;
       font-weight: 600;
-      opacity: 0.8;
+      margin: 0;
     }
   }
 
