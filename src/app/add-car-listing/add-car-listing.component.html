@@ -511,8 +511,9 @@
                         <span class="btn-icon">→</span>
                     </button>
 
-                    <button *ngIf="currentStep === totalSteps" type="submit" class="nav-btn submit-btn"
-                        [disabled]="!isCurrentStepValid() || isSubmitting" [class.loading]="isSubmitting">
+                    <button *ngIf="currentStep === totalSteps" type="button" class="nav-btn submit-btn"
+                        [disabled]="!isCurrentStepValid() || isSubmitting" [class.loading]="isSubmitting"
+                        (click)="onSubmitClick($event)">
                         <span class="btn-content" *ngIf="!isSubmitting">
                             <span class="btn-icon">🚀</span>
                             Submit Listing
