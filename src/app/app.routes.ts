@@ -11,6 +11,8 @@ import { UserProfileComponent } from './user-profile/user-profile.component';
 import { AdminDashboardComponent } from './admin-dashboard/admin-dashboard.component';
 import { NavigationComponent } from './navigation/navigation.component';
 import { AuthGuard } from './guards/auth.guard';
+import { BypassAuthGuard } from './guards/bypass-auth.guard';
+import { SmartAuthGuard } from './guards/smart-auth.guard';
 import { AuthCallbackComponent } from './components/auth-callback/auth-callback.component';
 import { EmailVerificationComponent } from './components/email-verification/email-verification.component';
 import { PasswordResetComponent } from './components/password-reset/password-reset.component';
@@ -23,20 +25,20 @@ export const routes: Routes = [
   { path: 'home', component: LandingComponent },
   { path: 'search', component: CarSearchComponent },
   { path: 'car/:id', component: CarDetailsComponent },
-  { path: 'booking-confirmation', component: BookingConfirmationComponent, canActivate: [AuthGuard] },
-  { path: 'add-car-listing', component: AddCarListingComponent, canActivate: [AuthGuard] },
-  { path: 'dashboard', component: CarOwnerDashboardComponent },
+  { path: 'booking-confirmation', component: BookingConfirmationComponent, canActivate: [SmartAuthGuard] },
+  { path: 'add-car-listing', component: AddCarListingComponent, canActivate: [SmartAuthGuard] },
+  { path: 'dashboard', component: CarOwnerDashboardComponent, canActivate: [SmartAuthGuard] },
   { path: 'test-dashboard', component: CarOwnerDashboardComponent },
   { path: 'auth-debug', component: AuthDebugComponent },
   { path: 'bypass-dashboard', component: CarOwnerDashboardComponent },
-  { path: 'renter-dashboard', component: RenterDashboardComponent, canActivate: [AuthGuard], data: { role: 'renter' } },
-  { path: 'messaging', component: MessagingComponent },
-  { path: 'profile', component: UserProfileComponent, canActivate: [AuthGuard] },
-  { path: 'admin', component: AdminDashboardComponent, canActivate: [AuthGuard], data: { role: 'admin' } },
+  { path: 'renter-dashboard', component: RenterDashboardComponent, canActivate: [SmartAuthGuard] },
+  { path: 'messaging', component: MessagingComponent, canActivate: [SmartAuthGuard] },
+  { path: 'profile', component: UserProfileComponent, canActivate: [SmartAuthGuard] },
+  { path: 'admin', component: AdminDashboardComponent, canActivate: [SmartAuthGuard] },
   { path: 'support', component: SupportComponent },
   { path: 'auth/callback', component: AuthCallbackComponent },
-  { path: 'verify-email', component: EmailVerificationComponent, canActivate: [AuthGuard] },
+  { path: 'verify-email', component: EmailVerificationComponent, canActivate: [SmartAuthGuard] },
   { path: 'reset-password', component: PasswordResetComponent },
-  { path: 'profile-setup', component: ProfileSetupComponent, canActivate: [AuthGuard] },
+  { path: 'profile-setup', component: ProfileSetupComponent, canActivate: [SmartAuthGuard] },
   { path: '**', redirectTo: '' }
 ];
