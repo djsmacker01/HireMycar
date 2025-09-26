@@ -10,6 +10,7 @@ export interface UserProfile {
   address?: string;
   city?: string;
   state?: string;
+  bio?: string;
   is_verified: boolean;
   created_at: string;
   updated_at: string;

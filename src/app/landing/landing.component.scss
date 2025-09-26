@@ -1,3 +1,5 @@
+@use "sass:color";
+
 // Variables
 $primary-color: #1e40af; // Nigerian blue
 $secondary-color: #059669; // Green for trust
@@ -238,7 +240,7 @@ $shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
     color: white;
     
     &:hover {
-      background: darken($accent-color, 10%);
+      background: color.adjust($accent-color, $lightness: -10%);
     }
   }
   

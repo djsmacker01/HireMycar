@@ -180,7 +180,7 @@ export class NavigationComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private authService: AuthService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.initializeAuthState();
@@ -261,7 +261,7 @@ export class NavigationComponent implements OnInit, OnDestroy {
   // Navigation Methods
   toggleMobileMenu(): void {
     this.isMobileMenuOpen = !this.isMobileMenuOpen;
-    
+
     if (this.isMobileMenuOpen) {
       document.body.style.overflow = 'hidden';
       document.body.classList.add('menu-open');
@@ -316,12 +316,12 @@ export class NavigationComponent implements OnInit, OnDestroy {
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: Event): void {
     const target = event.target as HTMLElement;
-    
+
     // Close user menu if clicking outside
     if (this.isUserMenuOpen && !target.closest('.user-menu-container')) {
       this.isUserMenuOpen = false;
     }
-    
+
     // Close search if clicking outside
     if (this.isSearchOpen && !target.closest('.search-section')) {
       this.isSearchOpen = false;
@@ -330,7 +330,10 @@ export class NavigationComponent implements OnInit, OnDestroy {
 
   // User Actions
   login(): void {
+    console.log('Navigation: Login button clicked');
+    console.log('Navigation: Setting showLoginModal to true');
     this.showLoginModal = true;
+    console.log('Navigation: showLoginModal is now:', this.showLoginModal);
   }
 
   signup(): void {
