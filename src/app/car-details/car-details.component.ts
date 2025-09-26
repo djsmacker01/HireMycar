@@ -2,6 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { ReviewService, Review, ReviewData, CarRating } from '../services/review.service';
+import { AuthService } from '../services/auth.service';
+import { SupabaseService } from '../services/supabase.service';
 
 // Interfaces
 export interface CarDetails {
@@ -23,7 +26,7 @@ export interface CarDetails {
   seats: number;
   isAvailable: boolean;
   host: Host;
-  reviews: Review[];
+  reviews: LocalReview[];
   availability: AvailabilityDate[];
   pickupLocation: string;
   dropoffLocation: string;
@@ -46,7 +49,7 @@ export interface Host {
   bio: string;
 }
 
-export interface Review {
+export interface LocalReview {
   id: string;
   userId: string;
   userName: string;
@@ -83,13 +86,18 @@ export interface Booking {
   styleUrls: ['./car-details.component.scss']
 })
 export class CarDetailsComponent implements OnInit {
-  constructor(private route: ActivatedRoute) {}
-  
+  constructor(
+    private route: ActivatedRoute,
+    private reviewService: ReviewService,
+    private authService: AuthService,
+    private supabase: SupabaseService
+  ) { }
+
   // Car details
   car: CarDetails | null = null;
   currentImageIndex = 0;
   showAllImages = false;
-  
+
   // Booking
   booking: Booking = {
     startDate: '',
@@ -101,13 +109,25 @@ export class CarDetailsComponent implements OnInit {
     insuranceFee: 0,
     total: 0
   };
-  
+
   // UI states
   isLoading = true;
   showBookingForm = false;
   showAllReviews = false;
   showHostDetails = false;
-  
+
+  // Review system
+  databaseReviews: Review[] = [];
+  carRating: CarRating | null = null;
+  showReviewForm = false;
+  isSubmittingReview = false;
+  reviewForm = {
+    rating: 5,
+    comment: ''
+  };
+  userCompletedBookings: any[] = [];
+  isLoggedIn = false;
+
   // Mock data
   private mockCar: CarDetails = {
     id: '1',
@@ -240,9 +260,13 @@ The car is regularly serviced and maintained to ensure optimal performance and s
   };
 
   ngOnInit(): void {
+    this.checkAuthStatus();
     this.route.params.subscribe(params => {
       const carId = params['id'];
       this.loadCarDetails(carId);
+      this.loadCarReviews(carId);
+      this.loadCarRating(carId);
+      this.loadUserCompletedBookings(carId);
     });
   }
 
@@ -280,7 +304,7 @@ The car is regularly serviced and maintained to ensure optimal performance and s
       const end = new Date(this.booking.endDate);
       const diffTime = Math.abs(end.getTime() - start.getTime());
       this.booking.days = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
-      
+
       if (this.car) {
         this.booking.dailyRate = this.car.pricePerDay;
         this.booking.subtotal = this.booking.days * this.booking.dailyRate;
@@ -344,22 +368,22 @@ The car is regularly serviced and maintained to ensure optimal performance and s
   private generateAvailabilityDates(): AvailabilityDate[] {
     const dates: AvailabilityDate[] = [];
     const today = new Date();
-    
+
     for (let i = 0; i < 60; i++) {
       const date = new Date(today);
       date.setDate(today.getDate() + i);
       const dateString = date.toISOString().split('T')[0];
-      
+
       // Randomly make some dates unavailable
       const isAvailable = Math.random() > 0.2; // 80% availability
-      
+
       dates.push({
         date: dateString,
         isAvailable: isAvailable,
         price: 25000
       });
     }
-    
+
     return dates;
   }
 
@@ -378,5 +402,199 @@ The car is regularly serviced and maintained to ensure optimal performance and s
 
   toggleAllImages(): void {
     this.showAllImages = !this.showAllImages;
+  }
+
+  // Review system methods
+  private checkAuthStatus(): void {
+    this.isLoggedIn = !!this.authService.currentUser();
+  }
+
+  private async loadCarReviews(carId: string): Promise<void> {
+    try {
+      this.databaseReviews = await this.reviewService.getReviewsForCar(carId);
+    } catch (error) {
+      console.error('Error loading car reviews:', error);
+    }
+  }
+
+  private async loadCarRating(carId: string): Promise<void> {
+    try {
+      this.carRating = await this.reviewService.getCarRatingDetails(carId);
+
+      // Update car rating if we have car data
+      if (this.car) {
+        this.car.rating = this.carRating.average_rating;
+        this.car.reviewCount = this.carRating.total_reviews;
+      }
+    } catch (error) {
+      console.error('Error loading car rating:', error);
+    }
+  }
+
+  private async loadUserCompletedBookings(carId: string): Promise<void> {
+    if (!this.isLoggedIn) return;
+
+    try {
+      const currentUser = this.authService.currentUser();
+      if (!currentUser) return;
+
+      const { data, error } = await this.supabase.client
+        .from('bookings')
+        .select(`
+          *,
+          car:cars!bookings_car_id_fkey(id, make, model, year)
+        `)
+        .eq('renter_id', currentUser.id)
+        .eq('car_id', carId)
+        .eq('status', 'completed');
+
+      if (error) {
+        console.error('Error loading user bookings:', error);
+        return;
+      }
+
+      this.userCompletedBookings = data || [];
+    } catch (error) {
+      console.error('Error in loadUserCompletedBookings:', error);
+    }
+  }
+
+  get allReviews(): (Review | LocalReview)[] {
+    // Combine database reviews with local mock reviews
+    const dbReviews = this.databaseReviews.map(review => ({
+      id: review.id,
+      userId: review.reviewer_id,
+      userName: review.reviewer?.full_name || 'Anonymous',
+      userPhoto: review.reviewer?.avatar_url || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=50&h=50&fit=crop&crop=face',
+      rating: review.rating,
+      comment: review.comment || '',
+      date: review.created_at,
+      tripDate: review.booking?.start_date || '',
+      helpful: review.helpful_count
+    }));
+
+    return [...dbReviews, ...(this.car?.reviews || [])];
+  }
+
+  get canUserReview(): boolean {
+    return this.isLoggedIn && this.userCompletedBookings.length > 0;
+  }
+
+  get hasUserReviewed(): boolean {
+    if (!this.isLoggedIn || !this.car) return false;
+
+    const currentUser = this.authService.currentUser();
+    return this.databaseReviews.some(review => review.reviewer_id === currentUser?.id);
+  }
+
+  toggleReviewForm(): void {
+    if (!this.isLoggedIn) {
+      alert('Please log in to write a review');
+      return;
+    }
+
+    if (!this.canUserReview) {
+      alert('You can only review cars you have rented');
+      return;
+    }
+
+    if (this.hasUserReviewed) {
+      alert('You have already reviewed this car');
+      return;
+    }
+
+    this.showReviewForm = !this.showReviewForm;
+  }
+
+  async submitReview(): Promise<void> {
+    if (!this.isLoggedIn || !this.canUserReview || this.hasUserReviewed) {
+      return;
+    }
+
+    this.isSubmittingReview = true;
+
+    try {
+      // Find the most recent completed booking for this car
+      const latestBooking = this.userCompletedBookings[0];
+
+      const reviewData: ReviewData = {
+        booking_id: latestBooking.id,
+        rating: this.reviewForm.rating,
+        comment: this.reviewForm.comment
+      };
+
+      const result = await this.reviewService.submitReview(reviewData);
+
+      if (result.success) {
+        // Refresh reviews and rating
+        await this.loadCarReviews(this.car!.id);
+        await this.loadCarRating(this.car!.id);
+
+        // Reset form and hide it
+        this.reviewForm = { rating: 5, comment: '' };
+        this.showReviewForm = false;
+
+        alert('Thank you for your review!');
+      } else {
+        alert('Failed to submit review: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      alert('An error occurred while submitting your review');
+    } finally {
+      this.isSubmittingReview = false;
+    }
+  }
+
+  async markReviewHelpful(reviewId: string): Promise<void> {
+    if (!this.isLoggedIn) {
+      alert('Please log in to mark reviews as helpful');
+      return;
+    }
+
+    try {
+      const success = await this.reviewService.markReviewHelpful(reviewId, true);
+      if (success) {
+        // Refresh reviews to show updated helpful count
+        await this.loadCarReviews(this.car!.id);
+      }
+    } catch (error) {
+      console.error('Error marking review helpful:', error);
+    }
+  }
+
+  async reportReview(reviewId: string): Promise<void> {
+    if (!this.isLoggedIn) {
+      alert('Please log in to report reviews');
+      return;
+    }
+
+    const reason = prompt('Please provide a reason for reporting this review:');
+    if (!reason) return;
+
+    try {
+      const success = await this.reviewService.reportReview(reviewId, reason);
+      if (success) {
+        alert('Review reported successfully');
+      } else {
+        alert('Failed to report review');
+      }
+    } catch (error) {
+      console.error('Error reporting review:', error);
+      alert('An error occurred while reporting the review');
+    }
+  }
+
+  getRatingBreakdown(): { rating: number; count: number; percentage: number }[] {
+    if (!this.carRating) return [];
+
+    const total = this.carRating.total_reviews;
+    return [
+      { rating: 5, count: this.carRating.rating_breakdown[5], percentage: total > 0 ? (this.carRating.rating_breakdown[5] / total) * 100 : 0 },
+      { rating: 4, count: this.carRating.rating_breakdown[4], percentage: total > 0 ? (this.carRating.rating_breakdown[4] / total) * 100 : 0 },
+      { rating: 3, count: this.carRating.rating_breakdown[3], percentage: total > 0 ? (this.carRating.rating_breakdown[3] / total) * 100 : 0 },
+      { rating: 2, count: this.carRating.rating_breakdown[2], percentage: total > 0 ? (this.carRating.rating_breakdown[2] / total) * 100 : 0 },
+      { rating: 1, count: this.carRating.rating_breakdown[1], percentage: total > 0 ? (this.carRating.rating_breakdown[1] / total) * 100 : 0 }
+    ];
   }
 } 

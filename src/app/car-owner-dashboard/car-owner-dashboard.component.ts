@@ -1,6 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { CarService } from '../services/car.service';
+import { AuthService } from '../services/auth.service';
+import { SimpleAuthService } from '../services/simple-auth.service';
 import { Router } from '@angular/router';
 
 // Interfaces
@@ -29,6 +32,7 @@ interface BookingRequest {
   returnDate: Date;
   status: 'Pending' | 'Confirmed' | 'Completed' | 'Cancelled';
   earnings: number;
+  rating?: number;
   renterPhone?: string;
   renterEmail?: string;
 }
@@ -232,11 +236,86 @@ export class CarOwnerDashboardComponent implements OnInit {
     earnings: 'all'
   };
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private carService: CarService,
+    private authService: AuthService,
+    private simpleAuth: SimpleAuthService
+  ) { }
 
   ngOnInit(): void {
+    // Check authentication
+    this.checkAuthentication();
+
     this.updateStats();
     this.startAutoRefresh();
+    this.loadCarListings();
+    this.loadUserBookings();
+    this.loadUserReviews();
+  }
+
+  private checkAuthentication(): void {
+    console.log('Dashboard: Checking authentication...');
+
+    // Use simple auth service for more reliable checking
+    this.simpleAuth.debugAuthStatus();
+
+    console.log('Simple Auth - Is authenticated:', this.simpleAuth.isAuthenticated());
+    console.log('Simple Auth - Current user:', this.simpleAuth.getCurrentUser());
+    console.log('Simple Auth - Current profile:', this.simpleAuth.getCurrentProfile());
+
+    if (!this.simpleAuth.isAuthenticated()) {
+      console.log('Dashboard: User not authenticated, redirecting to login');
+      this.router.navigate(['/']);
+      return;
+    }
+
+    console.log('Dashboard: User authenticated, proceeding with dashboard');
+  }
+
+  async loadCarListings(): Promise<void> {
+    try {
+      console.log('Loading car listings from database...');
+
+      // Get current user's ID for filtering
+      const currentUser = this.simpleAuth.getCurrentUser();
+      const currentProfile = this.simpleAuth.getCurrentProfile();
+
+      console.log('Current user:', currentUser);
+      console.log('Current profile:', currentProfile);
+
+      if (!currentUser || !currentProfile) {
+        console.log('No current user or profile found');
+        return;
+      }
+
+      // Fetch only the current user's car listings
+      const result = await this.carService.getCarListings(currentProfile.id);
+      console.log('Car listings query result:', result);
+
+      if (result.success && result.cars) {
+        console.log('User car listings loaded:', result.cars);
+        // Convert database cars to display format
+        this.carListings = result.cars.map(car => ({
+          id: car.id,
+          image: car.images && car.images.length > 0 ? car.images[0] : 'https://via.placeholder.com/400x300/cccccc/666666?text=No+Image',
+          title: `${car.make} ${car.model} ${car.year}`,
+          rate: car.daily_rate,
+          status: car.is_available ? 'Available' : 'Unavailable',
+          views: Math.floor(Math.random() * 200) + 50, // Mock views for now
+          lastUpdated: new Date(car.updated_at)
+        }));
+
+        console.log('Converted user car listings:', this.carListings);
+        this.updateStats();
+      } else {
+        console.log('No car listings found for user or error:', result.error);
+        // Keep mock data if no real data
+      }
+    } catch (error) {
+      console.error('Error loading car listings:', error);
+      // Keep mock data on error
+    }
   }
 
   // Real-time updates
@@ -247,11 +326,80 @@ export class CarOwnerDashboardComponent implements OnInit {
   }
 
   private updateStats(): void {
+    console.log('Updating dashboard stats for current user...');
+
+    // Update stats based on user's car listings
     this.dashboardStats.activeListings = this.carListings.filter(car => car.status === 'Available').length;
     this.dashboardStats.pendingBookings = this.pendingRequests.length;
     this.dashboardStats.totalEarnings = this.recentBookings
       .filter(booking => booking.status === 'Completed' || booking.status === 'Confirmed')
       .reduce((total, booking) => total + booking.earnings, 0);
+
+    // Calculate average rating from user's reviews
+    const userReviews = this.recentBookings.filter(booking => booking.rating && booking.rating > 0);
+    if (userReviews.length > 0) {
+      this.dashboardStats.ratingAverage = userReviews.reduce((sum, booking) => sum + (booking.rating || 0), 0) / userReviews.length;
+    }
+
+    console.log('Updated dashboard stats:', this.dashboardStats);
+  }
+
+  async loadUserBookings(): Promise<void> {
+    try {
+      const currentProfile = this.simpleAuth.getCurrentProfile();
+      if (!currentProfile) {
+        console.log('No current profile found for loading bookings');
+        return;
+      }
+
+      console.log('Loading bookings for user:', currentProfile.id);
+      const result = await this.carService.getUserBookings(currentProfile.id);
+
+      if (result.success && result.bookings) {
+        console.log('User bookings loaded:', result.bookings);
+        // Convert database bookings to display format
+        this.recentBookings = result.bookings.map(booking => ({
+          id: booking.id,
+          renterName: booking.user_profiles?.full_name || 'Unknown User',
+          carTitle: `${booking.cars?.make} ${booking.cars?.model} ${booking.cars?.year}`,
+          pickupDate: new Date(booking.pickup_date),
+          returnDate: new Date(booking.return_date),
+          status: booking.status,
+          earnings: booking.total_amount || 0,
+          rating: booking.rating || 0
+        }));
+
+        console.log('Converted user bookings:', this.recentBookings);
+        this.updateStats();
+      } else {
+        console.log('No bookings found for user or error:', result.error);
+      }
+    } catch (error) {
+      console.error('Error loading user bookings:', error);
+    }
+  }
+
+  async loadUserReviews(): Promise<void> {
+    try {
+      const currentProfile = this.simpleAuth.getCurrentProfile();
+      if (!currentProfile) {
+        console.log('No current profile found for loading reviews');
+        return;
+      }
+
+      console.log('Loading reviews for user:', currentProfile.id);
+      const result = await this.carService.getUserReviews(currentProfile.id);
+
+      if (result.success && result.reviews) {
+        console.log('User reviews loaded:', result.reviews);
+        // You can process reviews here if needed
+        this.updateStats();
+      } else {
+        console.log('No reviews found for user or error:', result.error);
+      }
+    } catch (error) {
+      console.error('Error loading user reviews:', error);
+    }
   }
 
   // Search and Filter
@@ -260,7 +408,7 @@ export class CarOwnerDashboardComponent implements OnInit {
 
     // Search filter
     if (this.searchTerm) {
-      filtered = filtered.filter(booking => 
+      filtered = filtered.filter(booking =>
         booking.renterName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
         booking.carTitle.toLowerCase().includes(this.searchTerm.toLowerCase())
       );
@@ -274,10 +422,10 @@ export class CarOwnerDashboardComponent implements OnInit {
     // Date range filter
     if (this.selectedDateRange !== 'all') {
       const now = new Date();
-      const daysAgo = this.selectedDateRange === 'week' ? 7 : 
-                     this.selectedDateRange === 'month' ? 30 : 90;
+      const daysAgo = this.selectedDateRange === 'week' ? 7 :
+        this.selectedDateRange === 'month' ? 30 : 90;
       const cutoffDate = new Date(now.getTime() - (daysAgo * 24 * 60 * 60 * 1000));
-      
+
       filtered = filtered.filter(booking => booking.pickupDate >= cutoffDate);
     }
 
@@ -319,7 +467,7 @@ export class CarOwnerDashboardComponent implements OnInit {
     let filtered = [...this.carListings];
 
     if (this.searchTerm) {
-      filtered = filtered.filter(car => 
+      filtered = filtered.filter(car =>
         car.title.toLowerCase().includes(this.searchTerm.toLowerCase())
       );
     }
@@ -463,7 +611,7 @@ export class CarOwnerDashboardComponent implements OnInit {
   editCarListing(carId: string): void {
     console.log(`Editing car listing ${carId}`);
     this.showNotificationMessage('Edit car listing - This would open edit form', 'info');
-    
+
     // Simulate opening edit modal or form
     const car = this.carListings.find(c => c.id === carId);
     if (car) {
@@ -512,7 +660,7 @@ export class CarOwnerDashboardComponent implements OnInit {
   // Enhanced View All Bookings functionality
   viewAllBookingsEnhanced(): void {
     this.showNotificationMessage('Loading all bookings with advanced filters...', 'info');
-    
+
     // Simulate loading more bookings
     setTimeout(() => {
       const additionalBookings: BookingRequest[] = [
@@ -539,7 +687,7 @@ export class CarOwnerDashboardComponent implements OnInit {
           renterEmail: 'chukwudi@email.com'
         }
       ];
-      
+
       this.recentBookings.push(...additionalBookings);
       this.showNotificationMessage('All bookings loaded successfully!', 'success');
     }, 2000);
@@ -554,7 +702,7 @@ export class CarOwnerDashboardComponent implements OnInit {
         rate: this.selectedCar.rate,
         status: this.selectedCar.status
       };
-      
+
       this.showEditForm = true;
       this.showNotificationMessage(`Opening edit form for ${this.selectedCar.title}...`, 'info');
     }
@@ -568,16 +716,16 @@ export class CarOwnerDashboardComponent implements OnInit {
       this.selectedCar.rate = this.editFormData.rate;
       this.selectedCar.status = this.editFormData.status;
       this.selectedCar.lastUpdated = new Date();
-      
+
       // Update the car in the listings array
       const carIndex = this.carListings.findIndex(c => c.id === this.selectedCar?.id);
       if (carIndex !== -1) {
         this.carListings[carIndex] = { ...this.selectedCar };
       }
-      
+
       this.showEditForm = false;
       this.showNotificationMessage('Car details updated successfully!', 'success');
-      
+
       // Update dashboard stats
       this.updateStats();
     } else {
@@ -643,15 +791,16 @@ export class CarOwnerDashboardComponent implements OnInit {
     this.notificationMessage = message;
     this.notificationType = type;
     this.showNotification = true;
-    
+
     setTimeout(() => {
       this.showNotification = false;
     }, 3000);
   }
 
   // Refresh data
-  refreshData(): void {
+  async refreshData(): Promise<void> {
     this.isRefreshing = true;
+    await this.loadCarListings();
     setTimeout(() => {
       this.updateStats();
       this.isRefreshing = false;
