@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Favicon Debug - HireMyCar</title>
+
+    <!-- Test different favicon approaches -->
+    <link rel="icon" type="image/svg+xml" href="favicon.svg?v=debug1">
+    <link rel="icon" type="image/svg+xml" href="favicon-32x32.svg?v=debug1">
+
+    <!-- Data URI approach -->
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSIxNiIgZmlsbD0iIzFlNDBhZiIvPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDYsIDgpIj4KICAgIDxyZWN0IHg9IjIiIHk9IjYiIHdpZHRoPSIxMiIgaGVpZ2h0PSI0IiBmaWxsPSIjZmZmZmZmIiByeD0iMSIvPgogICAgPHBhdGggZD0iTTQgNiBMOCAyIEwxMiA2IFoiIGZpbGw9IiNmZmZmZmYiLz4KICAgIDxjaXJjbGUgY3g9IjQiIGN5PSIxMiIgcj0iMiIgZmlsbD0iI2Y1OWUwYiIvPgogICAgPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMiIgZmlsbD0iI2Y1OWUwYiIvPgogICAgPGNpcmNsZSBjeD0iNCIgY3k9IjEyIiByPSIxIiBmaWxsPSIjZmZmZmZmIi8+CiAgICA8Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxIiBmaWxsPSIjZmZmZmZmIi8+CiAgPC9nPgogIDx0ZXh0IHg9IjE2IiB5PSIyMiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjgiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjZjU5ZTBpIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5IPC90ZXh0Pgo8L3N2Zz4K">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            min-height: 100vh;
+        }
+
+        .debug-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .favicon-display {
+            width: 64px;
+            height: 64px;
+            border: 3px solid #f59e0b;
+            border-radius: 50%;
+            margin: 20px auto;
+            display: block;
+            background: #1e40af;
+            position: relative;
+        }
+
+        .favicon-display::before {
+            content: "🚗";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+        }
+
+        .test-button {
+            background: #f59e0b;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            font-weight: bold;
+        }
+
+        .test-button:hover {
+            background: #d97706;
+        }
+
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+
+        .success {
+            background: rgba(34, 197, 94, 0.3);
+        }
+
+        .error {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .info {
+            background: rgba(59, 130, 246, 0.3);
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔍 Favicon Debug Tool</h1>
+
+    <div class="debug-section">
+        <h2>Current Favicon Status</h2>
+        <div class="favicon-display"></div>
+        <p>Check your browser tab - what favicon do you see?</p>
+        <div id="status" class="status info">Loading...</div>
+    </div>
+
+    <div class="debug-section">
+        <h2>Test Actions</h2>
+        <button class="test-button" onclick="forceFaviconUpdate()">Force Favicon Update</button>
+        <button class="test-button" onclick="testDataURIFavicon()">Test Data URI Favicon</button>
+        <button class="test-button" onclick="testFileFavicon()">Test File Favicon</button>
+        <button class="test-button" onclick="clearAllFavicons()">Clear All Favicons</button>
+    </div>
+
+    <div class="debug-section">
+        <h2>Debug Information</h2>
+        <div id="debug-info">
+            <p><strong>User Agent:</strong> <span id="user-agent"></span></p>
+            <p><strong>Current Time:</strong> <span id="current-time"></span></p>
+            <p><strong>Favicon Links:</strong> <span id="favicon-count"></span></p>
+        </div>
+    </div>
+
+    <div class="debug-section">
+        <h2>Expected Favicon</h2>
+        <p>You should see:</p>
+        <ul>
+            <li>✅ Blue circular background (#1e40af)</li>
+            <li>✅ White car silhouette</li>
+            <li>✅ Gold wheels (#f59e0b)</li>
+            <li>✅ Gold "H" letter</li>
+        </ul>
+    </div>
+
+    <script>
+        // Update debug information
+        document.getElementById('user-agent').textContent = navigator.userAgent;
+        document.getElementById('current-time').textContent = new Date().toLocaleString();
+        document.getElementById('favicon-count').textContent = document.querySelectorAll('link[rel="icon"]').length;
+
+        // Force favicon update
+        function forceFaviconUpdate() {
+            const timestamp = Date.now();
+            const favicon = document.createElement('link');
+            favicon.rel = 'icon';
+            favicon.type = 'image/svg+xml';
+            favicon.href = 'favicon.svg?v=' + timestamp;
+            document.head.appendChild(favicon);
+
+            updateStatus('Favicon force updated with timestamp: ' + timestamp, 'success');
+            console.log('Favicon force updated with timestamp:', timestamp);
+        }
+
+        // Test data URI favicon
+        function testDataURIFavicon() {
+            const dataURI = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8Y2lyY2xlIGN4PSIxNiIgY3k9IjE2IiByPSIxNiIgZmlsbD0iIzFlNDBhZiIvPgogIDxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDYsIDgpIj4KICAgIDxyZWN0IHg9IjIiIHk9IjYiIHdpZHRoPSIxMiIgaGVpZ2h0PSI0IiBmaWxsPSIjZmZmZmZmIiByeD0iMSIvPgogICAgPHBhdGggZD0iTTQgNiBMOCAyIEwxMiA2IFoiIGZpbGw9IiNmZmZmZmYiLz4KICAgIDxjaXJjbGUgY3g9IjQiIGN5PSIxMiIgcj0iMiIgZmlsbD0iI2Y1OWUwYiIvPgogICAgPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMiIgZmlsbD0iI2Y1OWUwYiIvPgogICAgPGNpcmNsZSBjeD0iNCIgY3k9IjEyIiByPSIxIiBmaWxsPSIjZmZmZmZmIi8+CiAgICA8Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxIiBmaWxsPSIjZmZmZmZmIi8+CiAgPC9nPgogIDx0ZXh0IHg9IjE2IiB5PSIyMiIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjgiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSIjZjU5ZTBpIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIj5IPC90ZXh0Pgo8L3N2Zz4K';
+
+            const favicon = document.createElement('link');
+            favicon.rel = 'icon';
+            favicon.type = 'image/svg+xml';
+            favicon.href = dataURI;
+            document.head.appendChild(favicon);
+
+            updateStatus('Data URI favicon applied', 'success');
+        }
+
+        // Test file favicon
+        function testFileFavicon() {
+            const favicon = document.createElement('link');
+            favicon.rel = 'icon';
+            favicon.type = 'image/svg+xml';
+            favicon.href = 'favicon.svg?v=' + Date.now();
+            document.head.appendChild(favicon);
+
+            updateStatus('File favicon applied', 'success');
+        }
+
+        // Clear all favicons
+        function clearAllFavicons() {
+            const favicons = document.querySelectorAll('link[rel="icon"]');
+            favicons.forEach(favicon => favicon.remove());
+            updateStatus('All favicons cleared', 'info');
+        }
+
+        // Update status
+        function updateStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = 'status ' + type;
+        }
+
+        // Initial status
+        updateStatus('Favicon debug tool loaded. Check your browser tab!', 'info');
+
+        // Auto-update favicon every 10 seconds
+        setInterval(() => {
+            forceFaviconUpdate();
+        }, 10000);
+    </script>
+</body>
+
+</html>
