@@ -189,16 +189,33 @@
   margin-bottom: 1.5rem;
 }
 
-.forgot-password-link {
+.forgot-password-btn {
+  background: transparent;
+  border: none;
   color: #3b82f6;
   text-decoration: none;
   font-size: 0.875rem;
   font-weight: 500;
+  cursor: pointer;
   transition: color 0.2s ease;
+  padding: 0.5rem 0;
+  text-align: right;
+  display: inline-block;
 
-  &:hover {
+  &:hover:not(:disabled) {
     color: #2563eb;
     text-decoration: underline;
+  }
+
+  &:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
   }
 }
 

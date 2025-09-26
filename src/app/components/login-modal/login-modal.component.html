@@ -27,7 +27,7 @@
                     <div class="input-container">
                         <input type="email" id="email" name="email" [(ngModel)]="loginData.email" class="form-input"
                             placeholder="Enter your email" required autocomplete="email" [disabled]="isLoading">
-                        <span class="input-icon">📧</span>
+                        <span class="input-icon"></span>
                     </div>
                 </div>
 
@@ -45,11 +45,6 @@
                     </div>
                 </div>
 
-                <!-- Forgot Password Link -->
-                <div class="form-actions">
-                    <a href="#" class="forgot-password-link">Forgot your password?</a>
-                </div>
-
                 <!-- Submit Button -->
                 <button type="submit" class="submit-btn primary" [disabled]="!isFormValid() || isLoading"
                     [class.loading]="isLoading">
@@ -63,6 +58,15 @@
                     </span>
                 </button>
             </form>
+
+            <!-- Forgot Password Link - OUTSIDE FORM -->
+            <div class="form-actions">
+                <button type="button" class="forgot-password-btn"
+                    (click)="onForgotPassword($event); $event.preventDefault(); $event.stopPropagation()"
+                    [disabled]="isLoading" aria-label="Reset password">
+                    Forgot your password?
+                </button>
+            </div>
 
             <!-- Divider -->
             <div class="divider">
