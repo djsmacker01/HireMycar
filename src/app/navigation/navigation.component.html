@@ -4,8 +4,27 @@
         <!-- Logo Section -->
         <div class="logo-section">
             <a routerLink="/" class="logo">
-                <span class="logo-text">HireMyCar</span>
-                <span class="logo-domain">.com.ng</span>
+                <div class="logo-icon">
+                    <svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Car Icon -->
+                        <g transform="translate(6, 8)">
+                            <!-- Car Body -->
+                            <rect x="2" y="6" width="12" height="4" fill="#1e40af" rx="1" />
+                            <!-- Car Roof -->
+                            <path d="M4 6 L8 2 L12 6 Z" fill="#1e40af" />
+                            <!-- Wheels -->
+                            <circle cx="4" cy="12" r="2" fill="#f59e0b" />
+                            <circle cx="12" cy="12" r="2" fill="#f59e0b" />
+                            <!-- Wheel Centers -->
+                            <circle cx="4" cy="12" r="1" fill="#ffffff" />
+                            <circle cx="12" cy="12" r="1" fill="#ffffff" />
+                        </g>
+                    </svg>
+                </div>
+                <div class="logo-text-container">
+                    <span class="logo-text">HireMyCar</span>
+                    <span class="logo-domain">.com.ng</span>
+                </div>
             </a>
         </div>
 
@@ -120,6 +139,23 @@
         <div class="mobile-nav-content" (click)="$event.stopPropagation()">
             <div class="mobile-nav-header">
                 <div class="mobile-logo">
+                    <div class="logo-icon">
+                        <svg width="24" height="24" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+                            <!-- Car Icon -->
+                            <g transform="translate(6, 8)">
+                                <!-- Car Body -->
+                                <rect x="2" y="6" width="12" height="4" fill="#1e40af" rx="1" />
+                                <!-- Car Roof -->
+                                <path d="M4 6 L8 2 L12 6 Z" fill="#1e40af" />
+                                <!-- Wheels -->
+                                <circle cx="4" cy="12" r="2" fill="#f59e0b" />
+                                <circle cx="12" cy="12" r="2" fill="#f59e0b" />
+                                <!-- Wheel Centers -->
+                                <circle cx="4" cy="12" r="1" fill="#ffffff" />
+                                <circle cx="12" cy="12" r="1" fill="#ffffff" />
+                            </g>
+                        </svg>
+                    </div>
                     <span class="logo-text">HireMyCar</span>
                 </div>
                 <button class="mobile-close" (click)="closeAllMenus()">
