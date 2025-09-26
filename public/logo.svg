@@ -1,0 +1,22 @@
+<svg width="200" height="60" viewBox="0 0 200 60" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="200" height="60" fill="#1e40af" rx="8"/>
+  
+  <!-- Car Icon -->
+  <g transform="translate(15, 15)">
+    <!-- Car Body -->
+    <rect x="8" y="12" width="24" height="8" fill="#ffffff" rx="2"/>
+    <!-- Car Roof -->
+    <path d="M12 12 L20 6 L28 12 Z" fill="#ffffff"/>
+    <!-- Wheels -->
+    <circle cx="12" cy="22" r="3" fill="#1e40af"/>
+    <circle cx="28" cy="22" r="3" fill="#1e40af"/>
+    <!-- Wheel Centers -->
+    <circle cx="12" cy="22" r="1.5" fill="#ffffff"/>
+    <circle cx="28" cy="22" r="1.5" fill="#ffffff"/>
+  </g>
+  
+  <!-- Text -->
+  <text x="60" y="25" font-family="Arial, sans-serif" font-size="18" font-weight="bold" fill="#ffffff">HireMyCar</text>
+  <text x="60" y="40" font-family="Arial, sans-serif" font-size="10" fill="#f59e0b">.com.ng</text>
+</svg>

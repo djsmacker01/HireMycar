@@ -1,0 +1,21 @@
+<svg width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background Circle -->
+  <circle cx="16" cy="16" r="16" fill="#1e40af"/>
+  
+  <!-- Car Icon -->
+  <g transform="translate(6, 8)">
+    <!-- Car Body -->
+    <rect x="2" y="6" width="12" height="4" fill="#ffffff" rx="1"/>
+    <!-- Car Roof -->
+    <path d="M4 6 L8 2 L12 6 Z" fill="#ffffff"/>
+    <!-- Wheels -->
+    <circle cx="4" cy="12" r="2" fill="#f59e0b"/>
+    <circle cx="12" cy="12" r="2" fill="#f59e0b"/>
+    <!-- Wheel Centers -->
+    <circle cx="4" cy="12" r="1" fill="#ffffff"/>
+    <circle cx="12" cy="12" r="1" fill="#ffffff"/>
+  </g>
+  
+  <!-- H Letter -->
+  <text x="16" y="22" font-family="Arial, sans-serif" font-size="8" font-weight="bold" fill="#f59e0b" text-anchor="middle">H</text>
+</svg>
