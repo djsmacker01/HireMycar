@@ -1,0 +1,80 @@
+<div class="email-verification-container">
+    <div class="email-verification-card">
+        <div class="header">
+            <div class="icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path
+                        d="M20 4H4C2.9 4 2.01 4.9 2.01 6L2 18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z"
+                        fill="currentColor" />
+                </svg>
+            </div>
+            <h1>Verify Your Email</h1>
+            <p class="subtitle">We've sent a verification code to your email address</p>
+        </div>
+
+        <div class="content">
+            <!-- Success state -->
+            <div *ngIf="success && emailSent" class="success-message">
+                <div class="success-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 16.17L4.83 12L3.41 13.41L9 19L21 7L19.59 5.59L9 16.17Z" fill="currentColor" />
+                    </svg>
+                </div>
+                <h3>Verification Email Sent!</h3>
+                <p>Please check your email and enter the verification code below.</p>
+            </div>
+
+            <!-- Verification form -->
+            <form *ngIf="!success || !emailSent" (ngSubmit)="verifyEmail()" class="verification-form">
+                <div class="form-group">
+                    <label for="verificationCode">Verification Code</label>
+                    <input type="text" id="verificationCode" [(ngModel)]="verificationCode" name="verificationCode"
+                        placeholder="Enter 6-digit code" maxlength="6" class="form-control" [class.error]="error"
+                        required />
+                </div>
+
+                <button type="submit" class="btn btn-primary" [disabled]="isLoading || !verificationCode.trim()">
+                    <span *ngIf="isLoading" class="spinner"></span>
+                    {{ isLoading ? 'Verifying...' : 'Verify Email' }}
+                </button>
+            </form>
+
+            <!-- Success after verification -->
+            <div *ngIf="success && !emailSent" class="verification-success">
+                <div class="success-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12S6.48 22 12 22 22 17.52 22 12 17.52 2 12 2ZM10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z"
+                            fill="currentColor" />
+                    </svg>
+                </div>
+                <h3>Email Verified Successfully!</h3>
+                <p>Your email has been verified. Redirecting you to the dashboard...</p>
+            </div>
+
+            <!-- Error message -->
+            <div *ngIf="error" class="error-message">
+                <div class="error-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path
+                            d="M12 2C6.48 2 2 6.48 2 12S6.48 22 12 22 22 17.52 22 12 17.52 2 12 2ZM13 17H11V15H13V17ZM13 13H11V7H13V13Z"
+                            fill="currentColor" />
+                    </svg>
+                </div>
+                <p>{{ error.message }}</p>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="actions">
+                <button *ngIf="emailSent && !success" type="button" class="btn btn-secondary" (click)="onResendEmail()"
+                    [disabled]="isLoading">
+                    Resend Email
+                </button>
+
+                <button type="button" class="btn btn-link" (click)="onBackToLogin()">
+                    Back to Login
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
